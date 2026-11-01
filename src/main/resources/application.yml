@@ -2,14 +2,16 @@ server:
   port: 8081
 
 spring:
+  application:
+    name: users-service
   datasource:
-    url: jdbc:mysql://localhost:3306/powerup
-    username: root
-    password: 1234
-
+    url: jdbc:postgresql://localhost:5432/${DB_NAME:plazoleta_users}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
-appDescription: "Pragma Powerup"
+
+appDescription: "users-service - Plazoleta de comidas (PRAGMA PowerUp)"
 appVersion: "1.0.0"

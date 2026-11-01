@@ -1,56 +1,55 @@
 plugins {
-	id 'org.springframework.boot' version '2.7.3'
-	id 'io.spring.dependency-management' version '1.0.13.RELEASE'
-	id 'java'
-	id 'jacoco'
+    id 'java'
+    id 'org.springframework.boot' version '3.5.9'
+    id 'io.spring.dependency-management' version '1.1.6'
+    id 'jacoco'
 }
 
 group = 'com.pragma.powerup'
 version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '11'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
 
 configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
 }
 
 repositories {
-	mavenCentral()
+    mavenCentral()
 }
 
 ext {
-	springBootVersion = "2.7.3"
-	mapstructVersion = "1.5.2.Final"
-	lombokVersion = "1.18.24"
-	lombokMapstructBindingVersion = "0.2.0"
-	mySqlConnectorVersion = "8.0.32"
-	openApiVersion = "1.6.11"
+    mapstructVersion = '1.6.3'
+    lombokMapstructBindingVersion = '0.2.0'
+    springdocVersion = '2.8.3'
 }
 
 dependencies {
-	implementation "org.springframework.boot:spring-boot-starter-data-jpa:${springBootVersion}"
-	implementation "org.springframework.boot:spring-boot-starter-validation:${springBootVersion}"
-	implementation "org.springframework.boot:spring-boot-starter-web:${springBootVersion}"
-	developmentOnly "org.springframework.boot:spring-boot-devtools:${springBootVersion}"
-	testImplementation "org.springframework.boot:spring-boot-starter-test:${springBootVersion}"
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
-	runtimeOnly "mysql:mysql-connector-java:${mySqlConnectorVersion}"
+    runtimeOnly 'org.postgresql:postgresql'
 
-	implementation "org.mapstruct:mapstruct:${mapstructVersion}"
-	compileOnly "org.projectlombok:lombok:${lombokVersion}"
-	annotationProcessor "org.projectlombok:lombok-mapstruct-binding:${lombokMapstructBindingVersion}"
-	annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
-	annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+    implementation "org.mapstruct:mapstruct:${mapstructVersion}"
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor "org.projectlombok:lombok-mapstruct-binding:${lombokMapstructBindingVersion}"
+    annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+    annotationProcessor 'org.projectlombok:lombok'
 
-	implementation "org.springdoc:springdoc-openapi-ui:${openApiVersion}"
-	implementation "org.springdoc:springdoc-openapi-webflux-ui:${openApiVersion}"
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
 tasks.named('test') {
-	useJUnitPlatform()
-}
-
-test {
-	finalizedBy jacocoTestReport
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
 }
