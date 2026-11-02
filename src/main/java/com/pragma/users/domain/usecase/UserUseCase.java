@@ -34,6 +34,11 @@ public class UserUseCase implements IUserServicePort {
         return userPersistencePort.saveUser(user);
     }
 
+    @Override
+    public User getUserById(Long id) {
+        return userPersistencePort.getUserById(id);
+    }
+
     private void ensureEmailIsAvailable(String email) {
         if (userPersistencePort.existsByEmail(email)) {
             throw new EmailAlreadyExistsException();

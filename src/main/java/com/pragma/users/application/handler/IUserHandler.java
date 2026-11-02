@@ -5,4 +5,6 @@ import com.pragma.users.application.dto.response.UserResponseDto;
 
 public interface IUserHandler {
     UserResponseDto createOwner(CreateOwnerRequestDto request);
+
+    UserResponseDto getUserById(Long id);
 }

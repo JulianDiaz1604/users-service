@@ -78,4 +78,18 @@ class UserUseCaseTest {
         assertThrows(DocumentNumberAlreadyExistsException.class, () -> userUseCase.createOwner(validOwner));
         verify(userPersistencePort, never()).saveUser(any());
     }
+
+    @Test
+    @DisplayName("Returns the user retrieved by id from the persistence port")
+    void getUserById_delegatesToPersistencePort() {
+        User persisted = new User(5L, "Ana", "Gomez", "123456789", "+573005698325",
+                LocalDate.of(1990, 1, 1), "ana.gomez@example.com", "encodedPassword", UserRole.OWNER.getId());
+        when(userPersistencePort.getUserById(5L)).thenReturn(persisted);
+
+        User result = userUseCase.getUserById(5L);
+
+        assertEquals(5L, result.getId());
+        assertEquals(UserRole.OWNER.getId(), result.getRoleId());
+        verify(userPersistencePort).getUserById(5L);
+    }
 }
