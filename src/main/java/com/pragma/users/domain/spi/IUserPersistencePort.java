@@ -2,6 +2,8 @@ package com.pragma.users.domain.spi;
 
 import com.pragma.users.domain.model.User;
 
+import java.util.UUID;
+
 public interface IUserPersistencePort {
     User saveUser(User user);
 
@@ -9,5 +11,5 @@ public interface IUserPersistencePort {
 
     boolean existsByDocumentNumber(String documentNumber);
 
-    User getUserById(Long id);
+    User getUserById(UUID id);
 }

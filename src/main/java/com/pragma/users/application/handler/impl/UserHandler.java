@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -28,7 +30,7 @@ public class UserHandler implements IUserHandler {
 
     @Override
     @Transactional(readOnly = true)
-    public UserResponseDto getUserById(Long id) {
+    public UserResponseDto getUserById(UUID id) {
         return userResponseMapper.toResponse(userServicePort.getUserById(id));
     }
 }

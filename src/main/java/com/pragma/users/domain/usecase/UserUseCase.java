@@ -9,6 +9,8 @@ import com.pragma.users.domain.spi.IPasswordEncoderPort;
 import com.pragma.users.domain.spi.IUserPersistencePort;
 import com.pragma.users.domain.validation.UserValidator;
 
+import java.util.UUID;
+
 public class UserUseCase implements IUserServicePort {
 
     private final IUserPersistencePort userPersistencePort;
@@ -35,7 +37,7 @@ public class UserUseCase implements IUserServicePort {
     }
 
     @Override
-    public User getUserById(Long id) {
+    public User getUserById(UUID id) {
         return userPersistencePort.getUserById(id);
     }
 

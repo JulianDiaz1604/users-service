@@ -60,6 +60,12 @@ Hard rules:
 - MapStruct: `@Mapper(componentModel = "spring", unmappedTargetPolicy = IGNORE)`.
 - Passwords hashed with **bcrypt**. Validate per each HU's acceptance criteria (email format,
   phone ≤ 13 chars allowing `+`, numeric document, positive price, adult age, etc.).
+- **Entity identifiers use `java.util.UUID`, never `Long`.** Every aggregate/entity `id` and every
+  reference to one (e.g. `ownerId`) is a `UUID`, across domain models, entities, DTOs, ports,
+  repositories (`JpaRepository<Entity, UUID>`), controller `@PathVariable`s and tests. JPA entities
+  generate it with `@GeneratedValue(strategy = GenerationType.UUID)`. This is the general rule for
+  all new entities/objects from now on. Exception: enum discriminators that are not entity PKs
+  (e.g. `roleId`, which maps to the `UserRole` enum) keep their natural type.
 
 ## 5. Testing — TDD, mandatory per HU
 

@@ -16,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -46,7 +47,7 @@ class UserUseCaseTest {
 
     @Test
     @DisplayName("Creates an owner with encoded password and OWNER role")
-    void createOwner_persistsOwnerWithEncodedPasswordAndOwnerRole() {
+    void shouldCreateOwnerWithEncodedPasswordAndOwnerRole() {
         when(userPersistencePort.existsByEmail(anyString())).thenReturn(false);
         when(userPersistencePort.existsByDocumentNumber(anyString())).thenReturn(false);
         when(passwordEncoderPort.encode("plainPassword")).thenReturn("encodedPassword");
@@ -64,7 +65,7 @@ class UserUseCaseTest {
 
     @Test
     @DisplayName("Rejects a duplicated email")
-    void createOwner_whenEmailExists_throwsEmailAlreadyExistsException() {
+    void shouldThrowWhenEmailAlreadyExists() {
         when(userPersistencePort.existsByEmail(anyString())).thenReturn(true);
         assertThrows(EmailAlreadyExistsException.class, () -> userUseCase.createOwner(validOwner));
         verify(userPersistencePort, never()).saveUser(any());
@@ -72,7 +73,7 @@ class UserUseCaseTest {
 
     @Test
     @DisplayName("Rejects a duplicated document number")
-    void createOwner_whenDocumentExists_throwsDocumentNumberAlreadyExistsException() {
+    void shouldThrowWhenDocumentAlreadyExists() {
         when(userPersistencePort.existsByEmail(anyString())).thenReturn(false);
         when(userPersistencePort.existsByDocumentNumber(anyString())).thenReturn(true);
         assertThrows(DocumentNumberAlreadyExistsException.class, () -> userUseCase.createOwner(validOwner));
@@ -82,14 +83,15 @@ class UserUseCaseTest {
     @Test
     @DisplayName("Returns the user retrieved by id from the persistence port")
     void shouldReturnUserRetrievedByIdFromPersistencePort() {
-        User persisted = new User(5L, "Ana", "Gomez", "123456789", "+573005698325",
+        UUID userId = UUID.randomUUID();
+        User persisted = new User(userId, "Ana", "Gomez", "123456789", "+573005698325",
                 LocalDate.of(1990, 1, 1), "ana.gomez@example.com", "encodedPassword", UserRole.OWNER.getId());
-        when(userPersistencePort.getUserById(5L)).thenReturn(persisted);
+        when(userPersistencePort.getUserById(userId)).thenReturn(persisted);
 
-        User result = userUseCase.getUserById(5L);
+        User result = userUseCase.getUserById(userId);
 
-        assertEquals(5L, result.getId());
+        assertEquals(userId, result.getId());
         assertEquals(UserRole.OWNER.getId(), result.getRoleId());
-        verify(userPersistencePort).getUserById(5L);
+        verify(userPersistencePort).getUserById(userId);
     }
 }

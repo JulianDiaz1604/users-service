@@ -26,7 +26,7 @@ class TestCoveragePolicyTest {
     private static final String ROOT_PACKAGE = "com.pragma.users";
 
     @Test
-    void every_use_case_and_validator_must_have_a_matching_unit_test() {
+    void everyUseCaseAndValidatorMustHaveAMatchingUnitTest() {
         // On the test classpath this picks up BOTH production and *Test classes.
         JavaClasses allClasses = new ClassFileImporter().importPackages(ROOT_PACKAGE);
 

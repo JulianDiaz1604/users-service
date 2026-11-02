@@ -10,6 +10,8 @@ class UserServiceApplicationTests {
 
     @Test
     void contextLoads() {
+        // Intentionally empty: this test passes if the Spring application context
+        // starts without errors (bean wiring, configuration, datasource).
     }
 
 }

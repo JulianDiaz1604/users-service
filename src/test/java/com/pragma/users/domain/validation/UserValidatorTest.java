@@ -17,67 +17,66 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class UserValidatorTest {
 
-    private UserValidator userValidator;
+    private final UserValidator userValidator = new UserValidator();
     private User validOwner;
 
     @BeforeEach
     void setUp() {
-        userValidator = new UserValidator();
         validOwner = new User(null, "Ana", "Gomez", "123456789", "+573005698325",
                 LocalDate.of(1990, 1, 1), "ana.gomez@example.com", "plainPassword", null);
     }
 
     @Test
     @DisplayName("Accepts a valid owner")
-    void validateNewOwner_withValidData_doesNotThrow() {
+    void shouldAcceptValidOwner() {
         assertDoesNotThrow(() -> userValidator.validateNewOwner(validOwner));
     }
 
     @Test
     @DisplayName("Rejects a blank required field")
-    void validateNewOwner_withBlankName_throwsRequiredFieldException() {
+    void shouldThrowWhenRequiredFieldIsBlank() {
         validOwner.setName("  ");
         assertThrows(RequiredFieldException.class, () -> userValidator.validateNewOwner(validOwner));
     }
 
     @Test
     @DisplayName("Rejects a null birth date")
-    void validateNewOwner_withNullBirthDate_throwsRequiredFieldException() {
+    void shouldThrowWhenBirthDateIsNull() {
         validOwner.setBirthDate(null);
         assertThrows(RequiredFieldException.class, () -> userValidator.validateNewOwner(validOwner));
     }
 
     @Test
     @DisplayName("Rejects an invalid email")
-    void validateNewOwner_withInvalidEmail_throwsInvalidEmailFormatException() {
+    void shouldThrowWhenEmailIsInvalid() {
         validOwner.setEmail("not-an-email");
         assertThrows(InvalidEmailFormatException.class, () -> userValidator.validateNewOwner(validOwner));
     }
 
     @Test
     @DisplayName("Rejects a phone longer than 13 characters")
-    void validateNewOwner_withTooLongPhone_throwsInvalidPhoneFormatException() {
+    void shouldThrowWhenPhoneTooLong() {
         validOwner.setPhone("+5730056983251");
         assertThrows(InvalidPhoneFormatException.class, () -> userValidator.validateNewOwner(validOwner));
     }
 
     @Test
     @DisplayName("Rejects a phone with letters")
-    void validateNewOwner_withNonNumericPhone_throwsInvalidPhoneFormatException() {
+    void shouldThrowWhenPhoneHasLetters() {
         validOwner.setPhone("abc123");
         assertThrows(InvalidPhoneFormatException.class, () -> userValidator.validateNewOwner(validOwner));
     }
 
     @Test
     @DisplayName("Rejects a non-numeric document number")
-    void validateNewOwner_withNonNumericDocument_throwsInvalidDocumentNumberException() {
+    void shouldThrowWhenDocumentIsNonNumeric() {
         validOwner.setDocumentNumber("ABC123");
         assertThrows(InvalidDocumentNumberException.class, () -> userValidator.validateNewOwner(validOwner));
     }
 
     @Test
     @DisplayName("Rejects an underage owner")
-    void validateNewOwner_whenUnderage_throwsUnderAgeException() {
+    void shouldThrowWhenOwnerIsUnderage() {
         validOwner.setBirthDate(LocalDate.now().minusYears(17));
         assertThrows(UnderAgeException.class, () -> userValidator.validateNewOwner(validOwner));
     }
