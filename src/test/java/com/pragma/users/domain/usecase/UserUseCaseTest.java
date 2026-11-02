@@ -81,7 +81,7 @@ class UserUseCaseTest {
 
     @Test
     @DisplayName("Returns the user retrieved by id from the persistence port")
-    void getUserById_delegatesToPersistencePort() {
+    void shouldReturnUserRetrievedByIdFromPersistencePort() {
         User persisted = new User(5L, "Ana", "Gomez", "123456789", "+573005698325",
                 LocalDate.of(1990, 1, 1), "ana.gomez@example.com", "encodedPassword", UserRole.OWNER.getId());
         when(userPersistencePort.getUserById(5L)).thenReturn(persisted);
