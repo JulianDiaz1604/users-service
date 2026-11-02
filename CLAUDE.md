@@ -1,4 +1,4 @@
-# CLAUDE.md — Plazoleta de comidas (PRAGMA PowerUp)
+# CLAUDE.md — Plazoleta de comidas (PRAGMA)
 
 Project conventions for every microservice of the "Plazoleta de comidas" challenge.
 These rules are shared across all repositories. The specific microservice this repo
@@ -125,3 +125,14 @@ Full acceptance criteria live in `docs/reto/` of the challenge materials.
 - **Domain runbook.** Each microservice keeps `docs/DOMAIN-RUNBOOK.md`, updated with every HU:
   for each HU, the business rules, invariants, and a table of custom exception → message →
   HTTP status. It is the living source of truth for the domain's behavior.
+
+## 11. Per-service identity (no archetype references)
+
+The archetype is only a starting guide. Each microservice carries its OWN identity — there must be
+**no reference to the base archetype (`powerup`)** anywhere (code, config or docs).
+- **Base package:** `com.pragma.<domain>` — `com.pragma.users`, `com.pragma.foodcourt`,
+  `com.pragma.messaging`, `com.pragma.traceability`. Never `com.pragma.powerup`.
+- **Main class:** `<ServiceName>ServiceApplication` (e.g. `UserServiceApplication`) plus a matching
+  `*Tests` class. Never `PowerUpApplication`.
+- **Gradle `group`:** `com.pragma`. **`rootProject.name`:** the repo name.
+- When bootstrapping a new service from the archetype, strip every `powerup` / `PowerUp` string.
