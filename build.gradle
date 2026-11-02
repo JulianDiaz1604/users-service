@@ -51,6 +51,9 @@ dependencies {
 
     // Architecture rules as unit tests (fails the build on a boundary violation).
     testImplementation 'com.tngtech.archunit:archunit-junit5:1.4.1'
+
+    // In-memory database so the Spring context test runs without external infrastructure.
+    testRuntimeOnly 'com.h2database:h2'
 }
 
 tasks.named('test') {
