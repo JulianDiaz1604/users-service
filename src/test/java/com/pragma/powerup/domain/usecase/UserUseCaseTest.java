@@ -1,17 +1,17 @@
 package com.pragma.powerup.domain.usecase;
 
-import com.pragma.powerup.domain.exception.DomainException;
-import com.pragma.powerup.domain.exception.UserAlreadyExistsException;
+import com.pragma.powerup.domain.exception.DocumentNumberAlreadyExistsException;
+import com.pragma.powerup.domain.exception.EmailAlreadyExistsException;
 import com.pragma.powerup.domain.model.User;
 import com.pragma.powerup.domain.model.UserRole;
 import com.pragma.powerup.domain.spi.IPasswordEncoderPort;
 import com.pragma.powerup.domain.spi.IUserPersistencePort;
+import com.pragma.powerup.domain.validation.UserValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -34,23 +34,14 @@ class UserUseCaseTest {
     @Mock
     private IPasswordEncoderPort passwordEncoderPort;
 
-    @InjectMocks
     private UserUseCase userUseCase;
-
     private User validOwner;
 
     @BeforeEach
     void setUp() {
-        validOwner = new User(
-                null,
-                "Ana",
-                "Gomez",
-                "123456789",
-                "+573005698325",
-                LocalDate.of(1990, 1, 1),
-                "ana.gomez@example.com",
-                "plainPassword",
-                null);
+        userUseCase = new UserUseCase(userPersistencePort, passwordEncoderPort, new UserValidator());
+        validOwner = new User(null, "Ana", "Gomez", "123456789", "+573005698325",
+                LocalDate.of(1990, 1, 1), "ana.gomez@example.com", "plainPassword", null);
     }
 
     @Test
@@ -72,56 +63,19 @@ class UserUseCaseTest {
     }
 
     @Test
-    @DisplayName("Rejects a blank required field")
-    void createOwner_withBlankName_throwsDomainException() {
-        validOwner.setName("  ");
-        assertThrows(DomainException.class, () -> userUseCase.createOwner(validOwner));
-        verify(userPersistencePort, never()).saveUser(any());
-    }
-
-    @Test
-    @DisplayName("Rejects an invalid email format")
-    void createOwner_withInvalidEmail_throwsDomainException() {
-        validOwner.setEmail("not-an-email");
-        assertThrows(DomainException.class, () -> userUseCase.createOwner(validOwner));
-        verify(userPersistencePort, never()).saveUser(any());
-    }
-
-    @Test
-    @DisplayName("Rejects a phone longer than 13 characters")
-    void createOwner_withTooLongPhone_throwsDomainException() {
-        validOwner.setPhone("+5730056983251");
-        assertThrows(DomainException.class, () -> userUseCase.createOwner(validOwner));
-    }
-
-    @Test
-    @DisplayName("Rejects a non-numeric document number")
-    void createOwner_withNonNumericDocument_throwsDomainException() {
-        validOwner.setDocumentNumber("ABC123");
-        assertThrows(DomainException.class, () -> userUseCase.createOwner(validOwner));
-    }
-
-    @Test
-    @DisplayName("Rejects an underage owner")
-    void createOwner_whenUnderage_throwsDomainException() {
-        validOwner.setBirthDate(LocalDate.now().minusYears(17));
-        assertThrows(DomainException.class, () -> userUseCase.createOwner(validOwner));
-    }
-
-    @Test
     @DisplayName("Rejects a duplicated email")
-    void createOwner_whenEmailExists_throwsUserAlreadyExistsException() {
+    void createOwner_whenEmailExists_throwsEmailAlreadyExistsException() {
         when(userPersistencePort.existsByEmail(anyString())).thenReturn(true);
-        assertThrows(UserAlreadyExistsException.class, () -> userUseCase.createOwner(validOwner));
+        assertThrows(EmailAlreadyExistsException.class, () -> userUseCase.createOwner(validOwner));
         verify(userPersistencePort, never()).saveUser(any());
     }
 
     @Test
     @DisplayName("Rejects a duplicated document number")
-    void createOwner_whenDocumentExists_throwsUserAlreadyExistsException() {
+    void createOwner_whenDocumentExists_throwsDocumentNumberAlreadyExistsException() {
         when(userPersistencePort.existsByEmail(anyString())).thenReturn(false);
         when(userPersistencePort.existsByDocumentNumber(anyString())).thenReturn(true);
-        assertThrows(UserAlreadyExistsException.class, () -> userUseCase.createOwner(validOwner));
+        assertThrows(DocumentNumberAlreadyExistsException.class, () -> userUseCase.createOwner(validOwner));
         verify(userPersistencePort, never()).saveUser(any());
     }
 }

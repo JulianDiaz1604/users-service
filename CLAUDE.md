@@ -25,7 +25,7 @@ Three layers, dependencies point **inward only**: `infrastructure → applicatio
 - **domain** — pure business logic. No Spring, no JPA, no framework imports. Contains:
   `api` (driving/primary port interfaces), `spi` (driven/secondary port interfaces),
   `model` (domain models), `usecase` (use cases: plain classes implementing `api` ports),
-  `exception` (domain exceptions).
+  `validation` (domain validators), `exception` (domain exceptions), `util` (constants).
 - **application** — orchestration. `dto/request`, `dto/response`, `handler` + `handler/impl`
   (`@Service`), `mapper` (MapStruct). May depend on **domain only**.
 - **infrastructure** — technical adapters. `configuration` (`BeanConfiguration` wires use cases
@@ -43,7 +43,7 @@ Hard rules:
 - **Java 21** (LTS, toolchain-pinned) · **Spring Boot 3.5.x** · **Gradle 8.10.x** (wrapper)
 - **PostgreSQL** (relational) / **MongoDB** (traceability)
 - **MapStruct 1.6.x** (mappers) · **Lombok** (Boot-managed) · **springdoc-openapi 2.x** (Swagger UI)
-- **JUnit 5 + Mockito** (tests) · **JaCoCo** (coverage)
+- **JUnit 5 + Mockito** (tests) · **JaCoCo** (coverage) · **spring-security-crypto** (bcrypt)
 - Spring Boot 3 uses the **`jakarta.*`** namespace (never `javax.*`).
 
 ## 4. Coding conventions
@@ -52,9 +52,9 @@ Hard rules:
   (`Restaurant`, `Dish`, `Order`, `Owner`, `Employee`, `OrderStatus`). No Spanish in code.
 - Naming: packages `lowercase`; classes/interfaces `PascalCase`; methods/vars/params `camelCase`;
   constants `UPPER_SNAKE_CASE`; booleans affirmative (`isActive`, `existsOwner`, `hasPin`).
-- Interfaces are `I`-prefixed (`IObjectServicePort`, `IObjectPersistencePort`, mappers, repositories).
+- Interfaces are `I`-prefixed (`IUserServicePort`, `IUserPersistencePort`, mappers, repositories).
 - Class suffixes: `*Model`, `*UseCase`, `*Handler`, `*RequestDto`, `*ResponseDto`, `*RestController`,
-  `*JpaAdapter`, `*Entity`, `*Repository`, `*Mapper`.
+  `*JpaAdapter`, `*Entity`, `*Repository`, `*Mapper`, `*Validator`.
 - Constructor injection via `@RequiredArgsConstructor`. **No field injection.**
 - **No wildcard imports.** SOLID. Short, single-purpose methods. Self-explanatory names over comments.
 - MapStruct: `@Mapper(componentModel = "spring", unmappedTargetPolicy = IGNORE)`.
@@ -67,7 +67,7 @@ Hard rules:
 - JUnit 5 + Mockito: `@ExtendWith(MockitoExtension.class)`, `@Mock`, `@InjectMocks`,
   `when(...).thenReturn(...)`, fixtures in `@BeforeEach`.
 - **FIRST**: Fast, Independent, Repeatable, Self-validating, Timely. No external deps in unit tests.
-- Prioritize use cases and handlers. Name tests after the behavior under test.
+- Unit-test the domain validators and use cases; name tests after the behavior under test.
 
 ## 6. Git workflow
 
@@ -105,3 +105,23 @@ Place order *(food-court)* · HU12 List orders by status *(food-court)*.
 Order traceability *(traceability)* · HU18 Order efficiency *(traceability)*.
 
 Full acceptance criteria live in `docs/reto/` of the challenge materials.
+
+## 10. Domain error handling & runbook (MANDATORY for every HU)
+
+- **Complete custom exceptions.** Every domain error has its own exception class under
+  `domain/exception`, extending `DomainException` — never a bare `DomainException` with an
+  ad-hoc string, never a raw `RuntimeException`. Families and their HTTP mapping:
+  - validation errors extend `DomainException` → **400**
+    (e.g. `RequiredFieldException`, `InvalidEmailFormatException`, `UnderAgeException`);
+  - conflicts extend `ConflictException` → **409**
+    (e.g. `EmailAlreadyExistsException`, `DocumentNumberAlreadyExistsException`);
+  - not-found → `NoDataFoundException` → **404**.
+  Each exception carries its own message from `DomainConstants`; `ControllerAdvisor` maps every
+  family to its status and returns `{ "message": ... }`.
+- **Domain validator.** Each aggregate/HU centralizes its business rules in a domain validator
+  (`domain/validation/<Aggregate>Validator`) that throws the custom exceptions. Use cases
+  orchestrate and delegate validation to the validator — no inline validation in use cases.
+  Validators are pure (no ports) and fully unit-tested.
+- **Domain runbook.** Each microservice keeps `docs/DOMAIN-RUNBOOK.md`, updated with every HU:
+  for each HU, the business rules, invariants, and a table of custom exception → message →
+  HTTP status. It is the living source of truth for the domain's behavior.
