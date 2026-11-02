@@ -1,4 +1,4 @@
-# CLAUDE.md — Plazoleta de comidas (PRAGMA PowerUp)
+# CLAUDE.md — Plazoleta de comidas (PRAGMA)
 
 Project conventions for every microservice of the "Plazoleta de comidas" challenge.
 These rules are shared across all repositories. The specific microservice this repo
@@ -12,7 +12,7 @@ A food-court ordering backend split into **four independent microservices** (one
 |------|----------------|-----------|
 | `users-service` | Users, roles, authentication (JWT) | PostgreSQL |
 | `food-court-service` | Restaurants, dishes, orders | PostgreSQL |
-| `messaging-service` | SMS notifications + security PIN (Twilio/SNS) | PostgreSQL |
+| `messaging-service` | SMS notifications + security PIN (AWS SNS) | PostgreSQL |
 | `traceability-service` | Order status history & efficiency metrics | MongoDB |
 
 Order lifecycle: `PENDING → IN_PREPARATION → READY → DELIVERED`, plus `PENDING → CANCELLED`.
@@ -25,7 +25,7 @@ Three layers, dependencies point **inward only**: `infrastructure → applicatio
 - **domain** — pure business logic. No Spring, no JPA, no framework imports. Contains:
   `api` (driving/primary port interfaces), `spi` (driven/secondary port interfaces),
   `model` (domain models), `usecase` (use cases: plain classes implementing `api` ports),
-  `exception` (domain exceptions).
+  `validation` (domain validators), `exception` (domain exceptions), `util` (constants).
 - **application** — orchestration. `dto/request`, `dto/response`, `handler` + `handler/impl`
   (`@Service`), `mapper` (MapStruct). May depend on **domain only**.
 - **infrastructure** — technical adapters. `configuration` (`BeanConfiguration` wires use cases
@@ -43,7 +43,7 @@ Hard rules:
 - **Java 21** (LTS, toolchain-pinned) · **Spring Boot 3.5.x** · **Gradle 8.10.x** (wrapper)
 - **PostgreSQL** (relational) / **MongoDB** (traceability)
 - **MapStruct 1.6.x** (mappers) · **Lombok** (Boot-managed) · **springdoc-openapi 2.x** (Swagger UI)
-- **JUnit 5 + Mockito** (tests) · **JaCoCo** (coverage)
+- **JUnit 5 + Mockito** (tests) · **JaCoCo** (coverage) · **spring-security-crypto** (bcrypt)
 - Spring Boot 3 uses the **`jakarta.*`** namespace (never `javax.*`).
 
 ## 4. Coding conventions
@@ -52,9 +52,9 @@ Hard rules:
   (`Restaurant`, `Dish`, `Order`, `Owner`, `Employee`, `OrderStatus`). No Spanish in code.
 - Naming: packages `lowercase`; classes/interfaces `PascalCase`; methods/vars/params `camelCase`;
   constants `UPPER_SNAKE_CASE`; booleans affirmative (`isActive`, `existsOwner`, `hasPin`).
-- Interfaces are `I`-prefixed (`IObjectServicePort`, `IObjectPersistencePort`, mappers, repositories).
+- Interfaces are `I`-prefixed (`IUserServicePort`, `IUserPersistencePort`, mappers, repositories).
 - Class suffixes: `*Model`, `*UseCase`, `*Handler`, `*RequestDto`, `*ResponseDto`, `*RestController`,
-  `*JpaAdapter`, `*Entity`, `*Repository`, `*Mapper`.
+  `*JpaAdapter`, `*Entity`, `*Repository`, `*Mapper`, `*Validator`.
 - Constructor injection via `@RequiredArgsConstructor`. **No field injection.**
 - **No wildcard imports.** SOLID. Short, single-purpose methods. Self-explanatory names over comments.
 - MapStruct: `@Mapper(componentModel = "spring", unmappedTargetPolicy = IGNORE)`.
@@ -67,7 +67,7 @@ Hard rules:
 - JUnit 5 + Mockito: `@ExtendWith(MockitoExtension.class)`, `@Mock`, `@InjectMocks`,
   `when(...).thenReturn(...)`, fixtures in `@BeforeEach`.
 - **FIRST**: Fast, Independent, Repeatable, Self-validating, Timely. No external deps in unit tests.
-- Prioritize use cases and handlers. Name tests after the behavior under test.
+- Unit-test the domain validators and use cases; name tests after the behavior under test.
 
 ## 6. Git workflow
 
@@ -81,7 +81,20 @@ Hard rules:
 ## 7. Working rules
 
 - Work **one HU at a time**; keep the scope of each HU isolated.
-- Every microservice documents its API with **OpenAPI** (springdoc), controllers under `/api/v1/...`.
+- **OpenAPI is mandatory.** Every microservice documents its API with **OpenAPI** (springdoc),
+  controllers under `/api/v1/...`. Every HU that adds or changes an endpoint keeps its OpenAPI
+  documentation current — it is part of the HU's done-criteria, not optional.
+- **Messaging uses AWS SNS.** The SMS + security-PIN flow (HU14, `messaging-service`) is built on
+  **AWS SNS** (replacing Twilio). Model the messaging integration behind an SPI port with an SNS
+  adapter in `infrastructure`, so the domain never depends on the provider.
+- **Order state machine is built at its HU.** The lifecycle in §1 is the reference only; implement
+  the state transitions when the owning HU arrives (HU13 / HU15 / HU16 in `food-court-service`),
+  not before.
+- **HU completion checklist (MANDATORY).** When an HU is finished, before merge/PR, present: the
+  HU's name, user-story description, role, and acceptance criteria (verbatim from `docs/reto/`),
+  plus a **checklist** mapping each acceptance criterion and each standing rule (custom exceptions
+  + validator + runbook, unit tests, OpenAPI docs, hexagonal boundaries) to a checkable item, so
+  compliance is reviewed together before the HU is closed.
 - Keep the hexagonal boundaries clean on every change. When in doubt, the domain stays pure.
 
 ## 8. Run locally
@@ -105,3 +118,34 @@ Place order *(food-court)* · HU12 List orders by status *(food-court)*.
 Order traceability *(traceability)* · HU18 Order efficiency *(traceability)*.
 
 Full acceptance criteria live in `docs/reto/` of the challenge materials.
+
+## 10. Domain error handling & runbook (MANDATORY for every HU)
+
+- **Complete custom exceptions.** Every domain error has its own exception class under
+  `domain/exception`, extending `DomainException` — never a bare `DomainException` with an
+  ad-hoc string, never a raw `RuntimeException`. Families and their HTTP mapping:
+  - validation errors extend `DomainException` → **400**
+    (e.g. `RequiredFieldException`, `InvalidEmailFormatException`, `UnderAgeException`);
+  - conflicts extend `ConflictException` → **409**
+    (e.g. `EmailAlreadyExistsException`, `DocumentNumberAlreadyExistsException`);
+  - not-found → `NoDataFoundException` → **404**.
+  Each exception carries its own message from `DomainConstants`; `ControllerAdvisor` maps every
+  family to its status and returns `{ "message": ... }`.
+- **Domain validator.** Each aggregate/HU centralizes its business rules in a domain validator
+  (`domain/validation/<Aggregate>Validator`) that throws the custom exceptions. Use cases
+  orchestrate and delegate validation to the validator — no inline validation in use cases.
+  Validators are pure (no ports) and fully unit-tested.
+- **Domain runbook.** Each microservice keeps `docs/DOMAIN-RUNBOOK.md`, updated with every HU:
+  for each HU, the business rules, invariants, and a table of custom exception → message →
+  HTTP status. It is the living source of truth for the domain's behavior.
+
+## 11. Per-service identity (no archetype references)
+
+The archetype is only a starting guide. Each microservice carries its OWN identity — there must be
+**no reference to the base archetype (`powerup`)** anywhere (code, config or docs).
+- **Base package:** `com.pragma.<domain>` — `com.pragma.users`, `com.pragma.foodcourt`,
+  `com.pragma.messaging`, `com.pragma.traceability`. Never `com.pragma.powerup`.
+- **Main class:** `<ServiceName>ServiceApplication` (e.g. `UserServiceApplication`) plus a matching
+  `*Tests` class. Never `PowerUpApplication`.
+- **Gradle `group`:** `com.pragma`. **`rootProject.name`:** the repo name.
+- When bootstrapping a new service from the archetype, strip every `powerup` / `PowerUp` string.
