@@ -5,7 +5,7 @@ plugins {
     id 'jacoco'
 }
 
-group = 'com.pragma.powerup'
+group = 'com.pragma'
 version = '0.0.1-SNAPSHOT'
 
 java {
@@ -34,6 +34,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.security:spring-security-crypto'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
     runtimeOnly 'org.postgresql:postgresql'
@@ -47,9 +48,42 @@ dependencies {
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+    // Architecture rules as unit tests (fails the build on a boundary violation).
+    testImplementation 'com.tngtech.archunit:archunit-junit5:1.4.1'
+
+    // In-memory database so the Spring context test runs without external infrastructure.
+    testRuntimeOnly 'com.h2database:h2'
 }
 
 tasks.named('test') {
     useJUnitPlatform()
     finalizedBy jacocoTestReport
 }
+
+// --- Architecture-only test task (fast feedback for the pre-commit hook) ---
+tasks.register('archTest', Test) {
+    group = 'verification'
+    description = 'Runs only the ArchUnit architecture rules.'
+    useJUnitPlatform()
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    filter {
+        includeTestsMatching 'com.pragma.users.architecture.*'
+    }
+}
+
+// --- Install versioned git hooks so every commit validates architecture ---
+tasks.register('installGitHooks') {
+    group = 'git hooks'
+    description = 'Points git at config/git-hooks so each commit validates architecture (archTest).'
+    onlyIf { file('.git').exists() }
+    doLast {
+        exec { commandLine 'git', 'config', 'core.hooksPath', 'config/git-hooks' }
+        file('config/git-hooks/pre-commit').setExecutable(true)
+        logger.lifecycle('Git hooks installed -> config/git-hooks')
+    }
+}
+
+// Self-install the hooks on every build (no-op when there is no .git, e.g. CI checkout).
+tasks.named('build') { dependsOn 'installGitHooks' }

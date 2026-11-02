@@ -1,6 +1,6 @@
 # users-service
 
-Users, roles and JWT authentication — microservice of the **Plazoleta de comidas** challenge (PRAGMA PowerUp).
+Users, roles and JWT authentication — microservice of the **Plazoleta de comidas** challenge (PRAGMA).
 
 ## User stories
 
