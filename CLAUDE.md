@@ -93,8 +93,11 @@ Hard rules:
 - **HU completion checklist (MANDATORY).** When an HU is finished, before merge/PR, present: the
   HU's name, user-story description, role, and acceptance criteria (verbatim from `docs/reto/`),
   plus a **checklist** mapping each acceptance criterion and each standing rule (custom exceptions
-  + validator + runbook, unit tests, OpenAPI docs, hexagonal boundaries) to a checkable item, so
-  compliance is reviewed together before the HU is closed.
+  + validator + runbook, unit tests, OpenAPI docs, hexagonal boundaries, SonarLint clean) to a
+  checkable item, so compliance is reviewed together before the HU is closed.
+- **SonarLint must pass clean before any PR.** No open SonarLint findings (bugs, vulnerabilities,
+  code smells, security hotspots) may remain when a PR is raised — fix them, or suppress with a
+  documented justification, first. This is a pre-PR gate alongside the HU completion checklist.
 - Keep the hexagonal boundaries clean on every change. When in doubt, the domain stays pure.
 
 ## 8. Run locally
