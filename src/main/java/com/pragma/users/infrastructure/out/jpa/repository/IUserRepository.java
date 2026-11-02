@@ -3,7 +3,9 @@ package com.pragma.users.infrastructure.out.jpa.repository;
 import com.pragma.users.infrastructure.out.jpa.entity.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface IUserRepository extends JpaRepository<UserEntity, Long> {
+import java.util.UUID;
+
+public interface IUserRepository extends JpaRepository<UserEntity, UUID> {
 
     boolean existsByEmail(String email);
 

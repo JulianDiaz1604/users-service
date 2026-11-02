@@ -38,3 +38,21 @@ business rules, invariants, and the custom-exception → message → HTTP-status
 | `UnderAgeException` | The owner must be of legal age | 400 |
 | `EmailAlreadyExistsException` | A user with this email already exists | 409 |
 | `DocumentNumberAlreadyExistsException` | A user with this document number already exists | 409 |
+
+---
+
+## Supporting endpoint for HU2 — Get user by id
+
+- **Endpoint:** `GET /api/v1/users/{id}`
+- **Use case:** `UserUseCase.getUserById`
+- **Purpose:** consumed by `food-court-service` (HU2) to validate that a restaurant's `ownerId`
+  belongs to a user with the **OWNER** role. Returns the user including its `roleId`.
+
+### Business rules / invariants
+- Returns the user matching `id`, or 404 when no user exists for that id.
+- The response never includes the password.
+
+### Exceptions
+| Exception | Message | HTTP |
+|-----------|---------|------|
+| `NoDataFoundException` | No data found for the requested petition | 404 |

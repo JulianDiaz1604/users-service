@@ -9,6 +9,8 @@ import com.pragma.users.domain.spi.IPasswordEncoderPort;
 import com.pragma.users.domain.spi.IUserPersistencePort;
 import com.pragma.users.domain.validation.UserValidator;
 
+import java.util.UUID;
+
 public class UserUseCase implements IUserServicePort {
 
     private final IUserPersistencePort userPersistencePort;
@@ -32,6 +34,11 @@ public class UserUseCase implements IUserServicePort {
         user.setRoleId(UserRole.OWNER.getId());
         user.setPassword(passwordEncoderPort.encode(user.getPassword()));
         return userPersistencePort.saveUser(user);
+    }
+
+    @Override
+    public User getUserById(UUID id) {
+        return userPersistencePort.getUserById(id);
     }
 
     private void ensureEmailIsAvailable(String email) {

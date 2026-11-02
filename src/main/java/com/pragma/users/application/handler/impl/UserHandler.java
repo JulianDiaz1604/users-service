@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -24,5 +26,11 @@ public class UserHandler implements IUserHandler {
     public UserResponseDto createOwner(CreateOwnerRequestDto request) {
         User createdOwner = userServicePort.createOwner(userRequestMapper.toUser(request));
         return userResponseMapper.toResponse(createdOwner);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserResponseDto getUserById(UUID id) {
+        return userResponseMapper.toResponse(userServicePort.getUserById(id));
     }
 }

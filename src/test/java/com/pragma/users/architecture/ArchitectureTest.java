@@ -25,6 +25,10 @@ import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
         importOptions = ImportOption.DoNotIncludeTests.class)
 class ArchitectureTest {
 
+    private ArchitectureTest() {
+        // Holder for static @ArchTest rules only; never instantiated.
+    }
+
     // --- RULE 1: Hexagonal layering ---
     // The domain is the core; the application orchestrates it; infrastructure adapts the outside world.
     // Access flows inward only, so no inner layer may reach an outer one.
