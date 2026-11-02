@@ -1,0 +1,11 @@
+#!/bin/sh
+# Versioned pre-commit hook — installed via `./gradlew installGitHooks`.
+# Architecture rules MUST pass on every commit — a boundary-violating commit is rejected.
+
+echo "[pre-commit] Validating architecture (ArchUnit)…"
+if ! ./gradlew --quiet archTest; then
+    echo "[pre-commit] Architecture rules failed. Commit aborted."
+    exit 1
+fi
+
+exit 0
