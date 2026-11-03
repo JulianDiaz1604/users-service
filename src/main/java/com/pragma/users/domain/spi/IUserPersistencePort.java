@@ -2,6 +2,7 @@ package com.pragma.users.domain.spi;
 
 import com.pragma.users.domain.model.User;
 
+import java.util.Optional;
 import java.util.UUID;
 
 public interface IUserPersistencePort {
@@ -12,4 +13,6 @@ public interface IUserPersistencePort {
     boolean existsByDocumentNumber(String documentNumber);
 
     User getUserById(UUID id);
+
+    Optional<User> findByEmail(String email);
 }

@@ -8,6 +8,7 @@ import com.pragma.users.infrastructure.out.jpa.mapper.IUserEntityMapper;
 import com.pragma.users.infrastructure.out.jpa.repository.IUserRepository;
 import lombok.RequiredArgsConstructor;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -37,5 +38,11 @@ public class UserJpaAdapter implements IUserPersistencePort {
         return userRepository.findById(id)
                 .map(userEntityMapper::toUser)
                 .orElseThrow(NoDataFoundException::new);
+    }
+
+    @Override
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .map(userEntityMapper::toUser);
     }
 }

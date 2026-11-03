@@ -15,4 +15,13 @@ public enum UserRole {
     public Long getId() {
         return id;
     }
+
+    public static UserRole fromId(Long id) {
+        for (UserRole role : values()) {
+            if (role.id.equals(id)) {
+                return role;
+            }
+        }
+        throw new IllegalArgumentException("Unknown role id: " + id);
+    }
 }

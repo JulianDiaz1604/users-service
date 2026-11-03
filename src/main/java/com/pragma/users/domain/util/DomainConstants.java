@@ -21,4 +21,5 @@ public final class DomainConstants {
     public static final String EMAIL_ALREADY_EXISTS_MESSAGE = "A user with this email already exists";
     public static final String DOCUMENT_ALREADY_EXISTS_MESSAGE =
             "A user with this document number already exists";
+    public static final String INVALID_CREDENTIALS_MESSAGE = "Invalid email or password";
 }
