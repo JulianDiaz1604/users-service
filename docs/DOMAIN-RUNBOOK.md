@@ -81,9 +81,10 @@ business rules, invariants, and the custom-exception → message → HTTP-status
   absent, seeding is skipped so no credentials ship in the repository.
 
 ### Endpoint authorization (Spring Security, stateless)
-- Public: `POST /api/v1/auth/login`, Swagger UI / OpenAPI docs, and `GET /api/v1/users/**`
-  (service-to-service owner lookup).
+- Public: `POST /api/v1/auth/login`, `POST /api/v1/users/client` (client self-registration, HU8),
+  Swagger UI / OpenAPI docs, and `GET /api/v1/users/**` (service-to-service owner lookup).
 - `POST /api/v1/users/owner` → requires role **ADMINISTRATOR** (from the JWT).
+- `POST /api/v1/users/employee` → requires role **OWNER** (from the JWT).
 - Any other request requires a valid JWT; unauthenticated access returns **401**
   (`JwtAuthenticationEntryPoint`).
 
@@ -128,3 +129,36 @@ business rules, invariants, and the custom-exception → message → HTTP-status
 | `DocumentNumberAlreadyExistsException` | A user with this document number already exists | 409 |
 | (unauthenticated request) | Authentication is required | 401 |
 | (authenticated non-owner) | — | 403 |
+
+---
+
+## HU8 — Create client
+
+- **Endpoint:** `POST /api/v1/users/client`
+- **Use case:** `UserUseCase.createClient`
+- **Validator:** `UserValidator.validateNewClient`
+
+### Business rules / invariants
+- **Public self-registration:** anyone may create a client account (permitted at `SecurityConfig`:
+  `POST /api/v1/users/client` → `permitAll`). No authentication is required, because a client
+  registers themselves to access the system and place orders.
+- Required fields: `name`, `lastName`, `documentNumber`, `phone`, `email`, `password`.
+  **`birthDate` is NOT required** for clients (no adult-age rule applies).
+- `email` must match a valid email format.
+- `phone`: digits only, optional leading `+`, max 13 characters.
+- `documentNumber`: digits only.
+- `password` is stored **bcrypt-hashed** and never returned in responses.
+- The created user is always assigned the **CLIENT** role (`UserRole.CLIENT`, id 4), server-side.
+  The `idRol` mentioned in the acceptance criteria is not accepted from the client; the role is
+  forced, mirroring HU1/HU6 — a caller cannot self-assign a privileged role.
+- `email` and `documentNumber` must be unique.
+
+### Exceptions
+| Exception | Message | HTTP |
+|-----------|---------|------|
+| `RequiredFieldException` | All fields are required | 400 |
+| `InvalidEmailFormatException` | The email format is invalid | 400 |
+| `InvalidPhoneFormatException` | The phone must be numeric, may start with '+', and have at most 13 characters | 400 |
+| `InvalidDocumentNumberException` | The document number must contain digits only | 400 |
+| `EmailAlreadyExistsException` | A user with this email already exists | 409 |
+| `DocumentNumberAlreadyExistsException` | A user with this document number already exists | 409 |

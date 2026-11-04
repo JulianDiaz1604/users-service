@@ -1,5 +1,6 @@
 package com.pragma.users.infrastructure.input.rest;
 
+import com.pragma.users.application.dto.request.CreateClientRequestDto;
 import com.pragma.users.application.dto.request.CreateEmployeeRequestDto;
 import com.pragma.users.application.dto.request.CreateOwnerRequestDto;
 import com.pragma.users.application.dto.response.UserResponseDto;
@@ -50,6 +51,17 @@ public class UserRestController {
     @PostMapping("/employee")
     public ResponseEntity<UserResponseDto> createEmployee(@RequestBody CreateEmployeeRequestDto request) {
         return new ResponseEntity<>(userHandler.createEmployee(request), HttpStatus.CREATED);
+    }
+
+    @Operation(summary = "Create a client account (public self-registration)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Client account created"),
+            @ApiResponse(responseCode = "400", description = "Invalid client data"),
+            @ApiResponse(responseCode = "409", description = "Email or document number already registered")
+    })
+    @PostMapping("/client")
+    public ResponseEntity<UserResponseDto> createClient(@RequestBody CreateClientRequestDto request) {
+        return new ResponseEntity<>(userHandler.createClient(request), HttpStatus.CREATED);
     }
 
     @Operation(summary = "Get a user by id (used by other services to validate roles)")

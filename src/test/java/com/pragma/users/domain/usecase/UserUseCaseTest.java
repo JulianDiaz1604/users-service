@@ -38,6 +38,7 @@ class UserUseCaseTest {
     private UserUseCase userUseCase;
     private User validOwner;
     private User validEmployee;
+    private User validClient;
 
     @BeforeEach
     void setUp() {
@@ -46,6 +47,8 @@ class UserUseCaseTest {
                 LocalDate.of(1990, 1, 1), "ana.gomez@example.com", "plainPassword", null);
         validEmployee = new User(null, "Luis", "Perez", "987654321", "+573001112233",
                 null, "luis.perez@example.com", "plainPassword", null);
+        validClient = new User(null, "Marta", "Ruiz", "1122334455", "+573004445566",
+                null, "marta.ruiz@example.com", "plainPassword", null);
     }
 
     @Test
@@ -115,6 +118,41 @@ class UserUseCaseTest {
         when(userPersistencePort.existsByEmail(anyString())).thenReturn(false);
         when(userPersistencePort.existsByDocumentNumber(anyString())).thenReturn(true);
         assertThrows(DocumentNumberAlreadyExistsException.class, () -> userUseCase.createEmployee(validEmployee));
+        verify(userPersistencePort, never()).saveUser(any());
+    }
+
+    @Test
+    @DisplayName("Creates a client with encoded password and CLIENT role")
+    void shouldCreateClientWithEncodedPasswordAndClientRole() {
+        when(userPersistencePort.existsByEmail(anyString())).thenReturn(false);
+        when(userPersistencePort.existsByDocumentNumber(anyString())).thenReturn(false);
+        when(passwordEncoderPort.encode("plainPassword")).thenReturn("encodedPassword");
+        when(userPersistencePort.saveUser(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        User result = userUseCase.createClient(validClient);
+
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+        verify(userPersistencePort).saveUser(captor.capture());
+        User saved = captor.getValue();
+        assertEquals(UserRole.CLIENT.getId(), saved.getRoleId());
+        assertEquals("encodedPassword", saved.getPassword());
+        assertEquals("marta.ruiz@example.com", result.getEmail());
+    }
+
+    @Test
+    @DisplayName("Rejects a duplicated email when creating a client")
+    void shouldThrowWhenClientEmailAlreadyExists() {
+        when(userPersistencePort.existsByEmail(anyString())).thenReturn(true);
+        assertThrows(EmailAlreadyExistsException.class, () -> userUseCase.createClient(validClient));
+        verify(userPersistencePort, never()).saveUser(any());
+    }
+
+    @Test
+    @DisplayName("Rejects a duplicated document number when creating a client")
+    void shouldThrowWhenClientDocumentAlreadyExists() {
+        when(userPersistencePort.existsByEmail(anyString())).thenReturn(false);
+        when(userPersistencePort.existsByDocumentNumber(anyString())).thenReturn(true);
+        assertThrows(DocumentNumberAlreadyExistsException.class, () -> userUseCase.createClient(validClient));
         verify(userPersistencePort, never()).saveUser(any());
     }
 

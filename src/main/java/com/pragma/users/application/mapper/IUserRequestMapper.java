@@ -1,5 +1,6 @@
 package com.pragma.users.application.mapper;
 
+import com.pragma.users.application.dto.request.CreateClientRequestDto;
 import com.pragma.users.application.dto.request.CreateEmployeeRequestDto;
 import com.pragma.users.application.dto.request.CreateOwnerRequestDto;
 import com.pragma.users.domain.model.User;
@@ -13,4 +14,6 @@ public interface IUserRequestMapper {
     User toUser(CreateOwnerRequestDto request);
 
     User toUser(CreateEmployeeRequestDto request);
+
+    User toUser(CreateClientRequestDto request);
 }
