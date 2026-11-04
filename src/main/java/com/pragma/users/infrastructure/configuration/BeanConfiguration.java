@@ -20,6 +20,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.Clock;
+import java.time.ZoneId;
+
 @Configuration
 @RequiredArgsConstructor
 public class BeanConfiguration {
@@ -43,8 +46,13 @@ public class BeanConfiguration {
     }
 
     @Bean
+    public Clock clock() {
+        return Clock.system(ZoneId.of("America/Bogota"));
+    }
+
+    @Bean
     public UserValidator userValidator() {
-        return new UserValidator();
+        return new UserValidator(clock());
     }
 
     @Bean

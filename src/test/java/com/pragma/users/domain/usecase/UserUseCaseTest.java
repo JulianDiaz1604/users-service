@@ -15,7 +15,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -42,7 +44,9 @@ class UserUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        userUseCase = new UserUseCase(userPersistencePort, passwordEncoderPort, new UserValidator());
+        Clock fixedClock = Clock.fixed(
+                LocalDate.of(2025, 1, 1).atStartOfDay(ZoneOffset.UTC).toInstant(), ZoneOffset.UTC);
+        userUseCase = new UserUseCase(userPersistencePort, passwordEncoderPort, new UserValidator(fixedClock));
         validOwner = new User(null, "Ana", "Gomez", "123456789", "+573005698325",
                 LocalDate.of(1990, 1, 1), "ana.gomez@example.com", "plainPassword", null);
         validEmployee = new User(null, "Luis", "Perez", "987654321", "+573001112233",
