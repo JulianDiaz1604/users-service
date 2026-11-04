@@ -6,6 +6,7 @@ business rules, invariants, and the custom-exception → message → HTTP-status
 ## Conventions
 - Validation errors extend `DomainException` → **HTTP 400**.
 - Conflicts extend `ConflictException` → **HTTP 409**.
+- Invalid credentials → `InvalidCredentialsException` (extends `DomainException`) → **HTTP 401**.
 - Not found → `NoDataFoundException` → **HTTP 404**.
 - Business rules live in `domain/validation/*Validator`; use cases delegate to them.
 - `ControllerAdvisor` maps every exception family and returns `{ "message": ... }`.
@@ -56,3 +57,39 @@ business rules, invariants, and the custom-exception → message → HTTP-status
 | Exception | Message | HTTP |
 |-----------|---------|------|
 | `NoDataFoundException` | No data found for the requested petition | 404 |
+
+---
+
+## HU5 — Authentication / JWT
+
+- **Endpoint:** `POST /api/v1/auth/login`
+- **Use case:** `AuthUseCase.login`
+- **Validator:** `AuthValidator.validateLoginRequest`
+- **Token port:** `ITokenProviderPort` (driven) → `JwtTokenProviderAdapter` (HS256, shared secret)
+
+### Business rules / invariants
+- Login is by **email + password**; both are required.
+- The password is verified against the stored **bcrypt** hash via `IPasswordEncoderPort.matches`.
+- On success a **JWT** is issued with: `subject` = user id (UUID), `role` claim (role name) and
+  `email` claim; signed HS256 with the secret shared across services (`jwt.secret`).
+- Login attempts are **unlimited** (no lockout).
+- `InvalidCredentialsException` is deliberately generic — it never reveals whether the email or the
+  password was the failing part.
+- A **bootstrap ADMINISTRATOR** is seeded on startup when absent (`AdminBootstrapConfiguration`),
+  because creating owners requires an authenticated admin and no HU creates the admin. Its password
+  is never hardcoded — it must be provided via `APP_ADMIN_PASSWORD` (`app.admin.password`); when
+  absent, seeding is skipped so no credentials ship in the repository.
+
+### Endpoint authorization (Spring Security, stateless)
+- Public: `POST /api/v1/auth/login`, Swagger UI / OpenAPI docs, and `GET /api/v1/users/**`
+  (service-to-service owner lookup).
+- `POST /api/v1/users/owner` → requires role **ADMINISTRATOR** (from the JWT).
+- Any other request requires a valid JWT; unauthenticated access returns **401**
+  (`JwtAuthenticationEntryPoint`).
+
+### Exceptions
+| Exception | Message | HTTP |
+|-----------|---------|------|
+| `RequiredFieldException` | All fields are required | 400 |
+| `InvalidCredentialsException` | Invalid email or password | 401 |
+| (unauthenticated request) | Authentication is required | 401 |

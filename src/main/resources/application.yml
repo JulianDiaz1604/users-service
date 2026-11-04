@@ -13,5 +13,12 @@ spring:
       ddl-auto: update
     show-sql: true
 
+jwt:
+  # Shared HS256 secret — must match food-court-service so it can verify the same tokens.
+  # Override in every environment via JWT_SECRET (min. 32 chars for HS256).
+  secret: ${JWT_SECRET:change-me-plazoleta-shared-jwt-secret-key-32bytes-min}
+  # Token lifetime in milliseconds (default 1 hour).
+  expiration: ${JWT_EXPIRATION:3600000}
+
 appDescription: "users-service - Plazoleta de comidas (PRAGMA)"
 appVersion: "1.0.0"

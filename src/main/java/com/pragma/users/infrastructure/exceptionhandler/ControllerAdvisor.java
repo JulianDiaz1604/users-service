@@ -2,6 +2,7 @@ package com.pragma.users.infrastructure.exceptionhandler;
 
 import com.pragma.users.domain.exception.ConflictException;
 import com.pragma.users.domain.exception.DomainException;
+import com.pragma.users.domain.exception.InvalidCredentialsException;
 import com.pragma.users.infrastructure.exception.NoDataFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,13 @@ public class ControllerAdvisor {
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<Map<String, String>> handleConflictException(ConflictException exception) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Collections.singletonMap(MESSAGE, exception.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidCredentialsException(
+            InvalidCredentialsException exception) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(Collections.singletonMap(MESSAGE, exception.getMessage()));
     }
 
