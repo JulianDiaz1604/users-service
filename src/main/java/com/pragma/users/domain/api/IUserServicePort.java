@@ -9,5 +9,7 @@ public interface IUserServicePort {
 
     User createEmployee(User user);
 
+    User createClient(User user);
+
     User getUserById(UUID id);
 }

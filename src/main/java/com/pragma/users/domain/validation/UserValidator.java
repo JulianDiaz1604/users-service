@@ -24,6 +24,11 @@ public class UserValidator {
         validateCommonFormats(user);
     }
 
+    public void validateNewClient(User user) {
+        validateClientRequiredFields(user);
+        validateCommonFormats(user);
+    }
+
     private void validateCommonFormats(User user) {
         validateEmailFormat(user.getEmail());
         validatePhoneFormat(user.getPhone());
@@ -37,6 +42,12 @@ public class UserValidator {
     }
 
     private void validateEmployeeRequiredFields(User user) {
+        if (hasBlankIdentityFields(user)) {
+            throw new RequiredFieldException();
+        }
+    }
+
+    private void validateClientRequiredFields(User user) {
         if (hasBlankIdentityFields(user)) {
             throw new RequiredFieldException();
         }

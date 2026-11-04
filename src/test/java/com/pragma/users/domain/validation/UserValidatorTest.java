@@ -20,6 +20,7 @@ class UserValidatorTest {
     private final UserValidator userValidator = new UserValidator();
     private User validOwner;
     private User validEmployee;
+    private User validClient;
 
     @BeforeEach
     void setUp() {
@@ -27,6 +28,8 @@ class UserValidatorTest {
                 LocalDate.of(1990, 1, 1), "ana.gomez@example.com", "plainPassword", null);
         validEmployee = new User(null, "Luis", "Perez", "987654321", "+573001112233",
                 null, "luis.perez@example.com", "plainPassword", null);
+        validClient = new User(null, "Marta", "Ruiz", "1122334455", "+573004445566",
+                null, "marta.ruiz@example.com", "plainPassword", null);
     }
 
     @Test
@@ -130,5 +133,53 @@ class UserValidatorTest {
     void shouldThrowWhenEmployeeDocumentIsNonNumeric() {
         validEmployee.setDocumentNumber("ABC123");
         assertThrows(InvalidDocumentNumberException.class, () -> userValidator.validateNewEmployee(validEmployee));
+    }
+
+    @Test
+    @DisplayName("Accepts a valid client")
+    void shouldAcceptValidClient() {
+        assertDoesNotThrow(() -> userValidator.validateNewClient(validClient));
+    }
+
+    @Test
+    @DisplayName("Accepts a client without a birth date (not required for clients)")
+    void shouldAcceptClientWithoutBirthDate() {
+        validClient.setBirthDate(null);
+        assertDoesNotThrow(() -> userValidator.validateNewClient(validClient));
+    }
+
+    @Test
+    @DisplayName("Does not enforce the adult-age rule on clients")
+    void shouldNotEnforceAgeRuleOnClient() {
+        validClient.setBirthDate(LocalDate.now().minusYears(17));
+        assertDoesNotThrow(() -> userValidator.validateNewClient(validClient));
+    }
+
+    @Test
+    @DisplayName("Rejects a client with a blank required field")
+    void shouldThrowWhenClientRequiredFieldIsBlank() {
+        validClient.setName("  ");
+        assertThrows(RequiredFieldException.class, () -> userValidator.validateNewClient(validClient));
+    }
+
+    @Test
+    @DisplayName("Rejects a client with an invalid email")
+    void shouldThrowWhenClientEmailIsInvalid() {
+        validClient.setEmail("not-an-email");
+        assertThrows(InvalidEmailFormatException.class, () -> userValidator.validateNewClient(validClient));
+    }
+
+    @Test
+    @DisplayName("Rejects a client with a phone longer than 13 characters")
+    void shouldThrowWhenClientPhoneTooLong() {
+        validClient.setPhone("+5730044455667");
+        assertThrows(InvalidPhoneFormatException.class, () -> userValidator.validateNewClient(validClient));
+    }
+
+    @Test
+    @DisplayName("Rejects a client with a non-numeric document number")
+    void shouldThrowWhenClientDocumentIsNonNumeric() {
+        validClient.setDocumentNumber("ABC123");
+        assertThrows(InvalidDocumentNumberException.class, () -> userValidator.validateNewClient(validClient));
     }
 }

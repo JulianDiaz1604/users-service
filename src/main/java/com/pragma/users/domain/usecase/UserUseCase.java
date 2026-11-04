@@ -37,6 +37,12 @@ public class UserUseCase implements IUserServicePort {
         return persistWithRole(user, UserRole.EMPLOYEE);
     }
 
+    @Override
+    public User createClient(User user) {
+        userValidator.validateNewClient(user);
+        return persistWithRole(user, UserRole.CLIENT);
+    }
+
     private User persistWithRole(User user, UserRole role) {
         ensureEmailIsAvailable(user.getEmail());
         ensureDocumentNumberIsAvailable(user.getDocumentNumber());

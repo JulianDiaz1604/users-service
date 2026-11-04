@@ -19,6 +19,7 @@ public class SecurityConfig {
     private static final String OWNER_ROLE = "OWNER";
     private static final String OWNER_ENDPOINT = "/api/v1/users/owner";
     private static final String EMPLOYEE_ENDPOINT = "/api/v1/users/employee";
+    private static final String CLIENT_ENDPOINT = "/api/v1/users/client";
     private static final String[] PUBLIC_ENDPOINTS = {
             "/api/v1/auth/**",
             "/swagger-ui/**",
@@ -46,6 +47,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, CLIENT_ENDPOINT).permitAll()
                         .requestMatchers(HttpMethod.POST, OWNER_ENDPOINT).hasRole(ADMINISTRATOR_ROLE)
                         .requestMatchers(HttpMethod.POST, EMPLOYEE_ENDPOINT).hasRole(OWNER_ROLE)
                         .anyRequest().authenticated())
