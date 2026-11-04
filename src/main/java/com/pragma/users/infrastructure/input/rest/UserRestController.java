@@ -1,5 +1,6 @@
 package com.pragma.users.infrastructure.input.rest;
 
+import com.pragma.users.application.dto.request.CreateEmployeeRequestDto;
 import com.pragma.users.application.dto.request.CreateOwnerRequestDto;
 import com.pragma.users.application.dto.response.UserResponseDto;
 import com.pragma.users.application.handler.IUserHandler;
@@ -36,6 +37,19 @@ public class UserRestController {
     @PostMapping("/owner")
     public ResponseEntity<UserResponseDto> createOwner(@RequestBody CreateOwnerRequestDto request) {
         return new ResponseEntity<>(userHandler.createOwner(request), HttpStatus.CREATED);
+    }
+
+    @Operation(summary = "Create an employee account (owner only)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Employee account created"),
+            @ApiResponse(responseCode = "400", description = "Invalid employee data"),
+            @ApiResponse(responseCode = "401", description = "Missing or invalid authentication"),
+            @ApiResponse(responseCode = "403", description = "Caller is not an owner"),
+            @ApiResponse(responseCode = "409", description = "Email or document number already registered")
+    })
+    @PostMapping("/employee")
+    public ResponseEntity<UserResponseDto> createEmployee(@RequestBody CreateEmployeeRequestDto request) {
+        return new ResponseEntity<>(userHandler.createEmployee(request), HttpStatus.CREATED);
     }
 
     @Operation(summary = "Get a user by id (used by other services to validate roles)")

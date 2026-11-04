@@ -14,23 +14,41 @@ import java.time.Period;
 public class UserValidator {
 
     public void validateNewOwner(User user) {
-        validateRequiredFields(user);
-        validateEmailFormat(user.getEmail());
-        validatePhoneFormat(user.getPhone());
-        validateDocumentNumber(user.getDocumentNumber());
+        validateOwnerRequiredFields(user);
+        validateCommonFormats(user);
         validateAdultAge(user.getBirthDate());
     }
 
-    private void validateRequiredFields(User user) {
-        if (isBlank(user.getName())
+    public void validateNewEmployee(User user) {
+        validateEmployeeRequiredFields(user);
+        validateCommonFormats(user);
+    }
+
+    private void validateCommonFormats(User user) {
+        validateEmailFormat(user.getEmail());
+        validatePhoneFormat(user.getPhone());
+        validateDocumentNumber(user.getDocumentNumber());
+    }
+
+    private void validateOwnerRequiredFields(User user) {
+        if (hasBlankIdentityFields(user) || user.getBirthDate() == null) {
+            throw new RequiredFieldException();
+        }
+    }
+
+    private void validateEmployeeRequiredFields(User user) {
+        if (hasBlankIdentityFields(user)) {
+            throw new RequiredFieldException();
+        }
+    }
+
+    private boolean hasBlankIdentityFields(User user) {
+        return isBlank(user.getName())
                 || isBlank(user.getLastName())
                 || isBlank(user.getDocumentNumber())
                 || isBlank(user.getPhone())
                 || isBlank(user.getEmail())
-                || isBlank(user.getPassword())
-                || user.getBirthDate() == null) {
-            throw new RequiredFieldException();
-        }
+                || isBlank(user.getPassword());
     }
 
     private void validateEmailFormat(String email) {

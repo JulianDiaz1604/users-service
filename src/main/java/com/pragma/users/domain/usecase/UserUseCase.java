@@ -28,10 +28,20 @@ public class UserUseCase implements IUserServicePort {
     @Override
     public User createOwner(User user) {
         userValidator.validateNewOwner(user);
+        return persistWithRole(user, UserRole.OWNER);
+    }
+
+    @Override
+    public User createEmployee(User user) {
+        userValidator.validateNewEmployee(user);
+        return persistWithRole(user, UserRole.EMPLOYEE);
+    }
+
+    private User persistWithRole(User user, UserRole role) {
         ensureEmailIsAvailable(user.getEmail());
         ensureDocumentNumberIsAvailable(user.getDocumentNumber());
 
-        user.setRoleId(UserRole.OWNER.getId());
+        user.setRoleId(role.getId());
         user.setPassword(passwordEncoderPort.encode(user.getPassword()));
         return userPersistencePort.saveUser(user);
     }

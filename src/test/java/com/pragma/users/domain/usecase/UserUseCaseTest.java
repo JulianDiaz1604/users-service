@@ -37,12 +37,15 @@ class UserUseCaseTest {
 
     private UserUseCase userUseCase;
     private User validOwner;
+    private User validEmployee;
 
     @BeforeEach
     void setUp() {
         userUseCase = new UserUseCase(userPersistencePort, passwordEncoderPort, new UserValidator());
         validOwner = new User(null, "Ana", "Gomez", "123456789", "+573005698325",
                 LocalDate.of(1990, 1, 1), "ana.gomez@example.com", "plainPassword", null);
+        validEmployee = new User(null, "Luis", "Perez", "987654321", "+573001112233",
+                null, "luis.perez@example.com", "plainPassword", null);
     }
 
     @Test
@@ -77,6 +80,41 @@ class UserUseCaseTest {
         when(userPersistencePort.existsByEmail(anyString())).thenReturn(false);
         when(userPersistencePort.existsByDocumentNumber(anyString())).thenReturn(true);
         assertThrows(DocumentNumberAlreadyExistsException.class, () -> userUseCase.createOwner(validOwner));
+        verify(userPersistencePort, never()).saveUser(any());
+    }
+
+    @Test
+    @DisplayName("Creates an employee with encoded password and EMPLOYEE role")
+    void shouldCreateEmployeeWithEncodedPasswordAndEmployeeRole() {
+        when(userPersistencePort.existsByEmail(anyString())).thenReturn(false);
+        when(userPersistencePort.existsByDocumentNumber(anyString())).thenReturn(false);
+        when(passwordEncoderPort.encode("plainPassword")).thenReturn("encodedPassword");
+        when(userPersistencePort.saveUser(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        User result = userUseCase.createEmployee(validEmployee);
+
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+        verify(userPersistencePort).saveUser(captor.capture());
+        User saved = captor.getValue();
+        assertEquals(UserRole.EMPLOYEE.getId(), saved.getRoleId());
+        assertEquals("encodedPassword", saved.getPassword());
+        assertEquals("luis.perez@example.com", result.getEmail());
+    }
+
+    @Test
+    @DisplayName("Rejects a duplicated email when creating an employee")
+    void shouldThrowWhenEmployeeEmailAlreadyExists() {
+        when(userPersistencePort.existsByEmail(anyString())).thenReturn(true);
+        assertThrows(EmailAlreadyExistsException.class, () -> userUseCase.createEmployee(validEmployee));
+        verify(userPersistencePort, never()).saveUser(any());
+    }
+
+    @Test
+    @DisplayName("Rejects a duplicated document number when creating an employee")
+    void shouldThrowWhenEmployeeDocumentAlreadyExists() {
+        when(userPersistencePort.existsByEmail(anyString())).thenReturn(false);
+        when(userPersistencePort.existsByDocumentNumber(anyString())).thenReturn(true);
+        assertThrows(DocumentNumberAlreadyExistsException.class, () -> userUseCase.createEmployee(validEmployee));
         verify(userPersistencePort, never()).saveUser(any());
     }
 

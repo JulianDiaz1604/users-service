@@ -38,7 +38,8 @@ public class UserEntity {
     @Column(nullable = false)
     private String phone;
 
-    @Column(name = "birth_date", nullable = false)
+    // Nullable: employees (HU6) are created without a birth date; only owners (HU1) require it.
+    @Column(name = "birth_date")
     private LocalDate birthDate;
 
     @Column(nullable = false, unique = true)

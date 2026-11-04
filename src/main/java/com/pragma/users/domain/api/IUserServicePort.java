@@ -7,5 +7,7 @@ import java.util.UUID;
 public interface IUserServicePort {
     User createOwner(User user);
 
+    User createEmployee(User user);
+
     User getUserById(UUID id);
 }

@@ -93,3 +93,38 @@ business rules, invariants, and the custom-exception → message → HTTP-status
 | `RequiredFieldException` | All fields are required | 400 |
 | `InvalidCredentialsException` | Invalid email or password | 401 |
 | (unauthenticated request) | Authentication is required | 401 |
+
+---
+
+## HU6 — Create employee
+
+- **Endpoint:** `POST /api/v1/users/employee`
+- **Use case:** `UserUseCase.createEmployee`
+- **Validator:** `UserValidator.validateNewEmployee`
+
+### Business rules / invariants
+- Only an authenticated **OWNER** may create employees (enforced at `SecurityConfig`:
+  `POST /api/v1/users/employee` → `hasRole('OWNER')`).
+- Required fields: `name`, `lastName`, `documentNumber`, `phone`, `email`, `password`.
+  **`birthDate` is NOT required** for employees (no adult-age rule applies).
+- `email` must match a valid email format.
+- `phone`: digits only, optional leading `+`, max 13 characters.
+- `documentNumber`: digits only.
+- `password` is stored **bcrypt-hashed** and never returned in responses.
+- The created user is always assigned the **EMPLOYEE** role (`UserRole.EMPLOYEE`, id 3),
+  server-side. The `idRol` mentioned in the acceptance criteria is not accepted from the client;
+  the role is forced, mirroring HU1 (owner) — a caller cannot elevate the created account.
+- `email` and `documentNumber` must be unique.
+- Note: `users.birth_date` is nullable to allow employees without a birth date.
+
+### Exceptions
+| Exception | Message | HTTP |
+|-----------|---------|------|
+| `RequiredFieldException` | All fields are required | 400 |
+| `InvalidEmailFormatException` | The email format is invalid | 400 |
+| `InvalidPhoneFormatException` | The phone must be numeric, may start with '+', and have at most 13 characters | 400 |
+| `InvalidDocumentNumberException` | The document number must contain digits only | 400 |
+| `EmailAlreadyExistsException` | A user with this email already exists | 409 |
+| `DocumentNumberAlreadyExistsException` | A user with this document number already exists | 409 |
+| (unauthenticated request) | Authentication is required | 401 |
+| (authenticated non-owner) | — | 403 |
