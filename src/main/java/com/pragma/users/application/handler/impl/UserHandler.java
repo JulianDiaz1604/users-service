@@ -1,5 +1,6 @@
 package com.pragma.users.application.handler.impl;
 
+import com.pragma.users.application.dto.request.CreateEmployeeRequestDto;
 import com.pragma.users.application.dto.request.CreateOwnerRequestDto;
 import com.pragma.users.application.dto.response.UserResponseDto;
 import com.pragma.users.application.handler.IUserHandler;
@@ -26,6 +27,12 @@ public class UserHandler implements IUserHandler {
     public UserResponseDto createOwner(CreateOwnerRequestDto request) {
         User createdOwner = userServicePort.createOwner(userRequestMapper.toUser(request));
         return userResponseMapper.toResponse(createdOwner);
+    }
+
+    @Override
+    public UserResponseDto createEmployee(CreateEmployeeRequestDto request) {
+        User createdEmployee = userServicePort.createEmployee(userRequestMapper.toUser(request));
+        return userResponseMapper.toResponse(createdEmployee);
     }
 
     @Override

@@ -16,7 +16,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private static final String ADMINISTRATOR_ROLE = "ADMINISTRATOR";
+    private static final String OWNER_ROLE = "OWNER";
     private static final String OWNER_ENDPOINT = "/api/v1/users/owner";
+    private static final String EMPLOYEE_ENDPOINT = "/api/v1/users/employee";
     private static final String[] PUBLIC_ENDPOINTS = {
             "/api/v1/auth/**",
             "/swagger-ui/**",
@@ -45,6 +47,7 @@ public class SecurityConfig {
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/**").permitAll()
                         .requestMatchers(HttpMethod.POST, OWNER_ENDPOINT).hasRole(ADMINISTRATOR_ROLE)
+                        .requestMatchers(HttpMethod.POST, EMPLOYEE_ENDPOINT).hasRole(OWNER_ROLE)
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
