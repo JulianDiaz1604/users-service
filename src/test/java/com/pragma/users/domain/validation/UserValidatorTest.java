@@ -10,14 +10,20 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.Clock;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class UserValidatorTest {
 
-    private final UserValidator userValidator = new UserValidator();
+    private static final LocalDate REFERENCE_DATE = LocalDate.of(2025, 1, 1);
+
+    private final Clock fixedClock =
+            Clock.fixed(REFERENCE_DATE.atStartOfDay(ZoneOffset.UTC).toInstant(), ZoneOffset.UTC);
+    private final UserValidator userValidator = new UserValidator(fixedClock);
     private User validOwner;
     private User validEmployee;
     private User validClient;
@@ -83,7 +89,21 @@ class UserValidatorTest {
     @Test
     @DisplayName("Rejects an underage owner")
     void shouldThrowWhenOwnerIsUnderage() {
-        validOwner.setBirthDate(LocalDate.now().minusYears(17));
+        validOwner.setBirthDate(REFERENCE_DATE.minusYears(17));
+        assertThrows(UnderAgeException.class, () -> userValidator.validateNewOwner(validOwner));
+    }
+
+    @Test
+    @DisplayName("Accepts an owner who turns adult exactly on the reference date")
+    void shouldAcceptOwnerExactlyAtAdultBoundary() {
+        validOwner.setBirthDate(REFERENCE_DATE.minusYears(18));
+        assertDoesNotThrow(() -> userValidator.validateNewOwner(validOwner));
+    }
+
+    @Test
+    @DisplayName("Rejects an owner one day short of adulthood")
+    void shouldThrowWhenOwnerIsOneDayShortOfAdulthood() {
+        validOwner.setBirthDate(REFERENCE_DATE.minusYears(18).plusDays(1));
         assertThrows(UnderAgeException.class, () -> userValidator.validateNewOwner(validOwner));
     }
 

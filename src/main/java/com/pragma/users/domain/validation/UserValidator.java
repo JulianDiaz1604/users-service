@@ -7,11 +7,16 @@ import com.pragma.users.domain.exception.RequiredFieldException;
 import com.pragma.users.domain.exception.UnderAgeException;
 import com.pragma.users.domain.model.User;
 import com.pragma.users.domain.util.DomainConstants;
+import lombok.RequiredArgsConstructor;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.Period;
 
+@RequiredArgsConstructor
 public class UserValidator {
+
+    private final Clock clock;
 
     public void validateNewOwner(User user) {
         validateOwnerRequiredFields(user);
@@ -81,7 +86,7 @@ public class UserValidator {
     }
 
     private void validateAdultAge(LocalDate birthDate) {
-        if (Period.between(birthDate, LocalDate.now()).getYears() < DomainConstants.MINIMUM_AGE) {
+        if (Period.between(birthDate, LocalDate.now(clock)).getYears() < DomainConstants.MINIMUM_AGE) {
             throw new UnderAgeException();
         }
     }
