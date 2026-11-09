@@ -20,6 +20,7 @@ public class JwtTokenProviderAdapter implements ITokenProviderPort {
 
     public static final String ROLE_CLAIM = "role";
     public static final String EMAIL_CLAIM = "email";
+    public static final String RESTAURANT_ID_CLAIM = "restaurantId";
 
     private final SecretKey signingKey;
     private final long expirationMillis;
@@ -43,6 +44,25 @@ public class JwtTokenProviderAdapter implements ITokenProviderPort {
                 .compact();
     }
 
+    /**
+     * Generates a token for an EMPLOYEE, including the optional {@code restaurantId} claim.
+     * For non-EMPLOYEE roles call {@link #generateToken(UUID, String, UserRole)} instead.
+     */
+    public String generateToken(UUID userId, String email, UserRole role, UUID restaurantId) {
+        Date now = new Date();
+        Date expiresAt = new Date(now.getTime() + expirationMillis);
+        var builder = Jwts.builder()
+                .subject(userId.toString())
+                .claim(ROLE_CLAIM, role.name())
+                .claim(EMAIL_CLAIM, email)
+                .issuedAt(now)
+                .expiration(expiresAt);
+        if (restaurantId != null) {
+            builder.claim(RESTAURANT_ID_CLAIM, restaurantId.toString());
+        }
+        return builder.signWith(signingKey).compact();
+    }
+
     public boolean isTokenValid(String token) {
         try {
             parseClaims(token);
@@ -58,6 +78,15 @@ public class JwtTokenProviderAdapter implements ITokenProviderPort {
 
     public String extractRole(String token) {
         return parseClaims(token).get(ROLE_CLAIM, String.class);
+    }
+
+    /**
+     * Extracts the {@code restaurantId} claim from the token, or returns {@code null} when the
+     * claim is absent (e.g. tokens issued before this claim was introduced — backward compatible).
+     */
+    public UUID extractRestaurantId(String token) {
+        String value = parseClaims(token).get(RESTAURANT_ID_CLAIM, String.class);
+        return value != null ? UUID.fromString(value) : null;
     }
 
     private Claims parseClaims(String token) {
