@@ -1,7 +1,9 @@
 package com.pragma.users.infrastructure.out.client;
 
 import com.pragma.users.domain.exception.EmployeeAlreadyExistsException;
+import com.pragma.users.domain.exception.OwnerNotFoundException;
 import com.pragma.users.domain.exception.RestaurantNotFoundException;
+import com.pragma.users.domain.exception.RestaurantServiceUnavailableException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,10 +24,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withException;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 import org.springframework.http.HttpStatus;
+
+import java.io.IOException;
 
 class FoodCourtRestClientAdapterTest {
 
@@ -63,6 +69,44 @@ class FoodCourtRestClientAdapterTest {
                 .andRespond(withStatus(HttpStatus.NOT_FOUND));
 
         assertThrows(RestaurantNotFoundException.class, () -> adapter.getOwnerId(restaurantId));
+    }
+
+    @Test
+    @DisplayName("GET owner returns 200 with null ownerId → throws OwnerNotFoundException")
+    void whenGetOwnerReturns200WithNullOwnerThenThrowsOwnerNotFoundException() {
+        UUID restaurantId = UUID.randomUUID();
+        String responseJson = String.format(
+                "{\"restaurantId\":\"%s\",\"ownerId\":null}", restaurantId);
+
+        server.expect(requestTo(BASE_URL + "/api/v1/restaurants/" + restaurantId + "/owner"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON));
+
+        assertThrows(OwnerNotFoundException.class, () -> adapter.getOwnerId(restaurantId));
+    }
+
+    @Test
+    @DisplayName("GET owner cannot connect → throws RestaurantServiceUnavailableException")
+    void whenGetOwnerConnectionFailsThenThrowsRestaurantServiceUnavailableException() {
+        UUID restaurantId = UUID.randomUUID();
+        server.expect(requestTo(BASE_URL + "/api/v1/restaurants/" + restaurantId + "/owner"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withException(new IOException("Connection refused")));
+
+        assertThrows(RestaurantServiceUnavailableException.class,
+                () -> adapter.getOwnerId(restaurantId));
+    }
+
+    @Test
+    @DisplayName("GET owner returns 500 → throws RestaurantServiceUnavailableException")
+    void whenGetOwnerReturns500ThenThrowsRestaurantServiceUnavailableException() {
+        UUID restaurantId = UUID.randomUUID();
+        server.expect(requestTo(BASE_URL + "/api/v1/restaurants/" + restaurantId + "/owner"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withServerError());
+
+        assertThrows(RestaurantServiceUnavailableException.class,
+                () -> adapter.getOwnerId(restaurantId));
     }
 
     @Test

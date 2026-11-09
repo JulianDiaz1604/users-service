@@ -122,6 +122,8 @@ business rules, invariants, and the custom-exception → message → HTTP-status
 1. Validate employee fields (`UserValidator.validateNewEmployee`).
 2. `GET /api/v1/restaurants/{restaurantId}/owner` via food-court (fail fast — no side effects).
    - 404 → `RestaurantNotFoundException` (HTTP 404).
+   - 200 with null `ownerId` → `OwnerNotFoundException` (HTTP 404).
+   - Unreachable (connection refused/timeout) or unexpected status → `RestaurantServiceUnavailableException` (HTTP 502).
 3. Compare returned `ownerId` to `requesterOwnerId` (JWT subject).
    - Mismatch → `NotRestaurantOwnerException` (HTTP 403).
 4. Persist account (bcrypt + uniqueness checks → 409 on duplicate).
@@ -145,7 +147,9 @@ The inbound owner JWT is propagated to food-court via `AuthorizationForwardingIn
 | `InvalidPhoneFormatException` | The phone must be numeric, may start with '+', and have at most 13 characters | 400 |
 | `InvalidDocumentNumberException` | The document number must contain digits only | 400 |
 | `RestaurantNotFoundException` | The restaurant does not exist | 404 |
+| `OwnerNotFoundException` | The restaurant has no registered owner | 404 |
 | `NotRestaurantOwnerException` | This action can only be performed by the owner of the restaurant | 403 |
+| `RestaurantServiceUnavailableException` | The restaurant service is unavailable; please try again later | 502 |
 | `EmailAlreadyExistsException` | A user with this email already exists | 409 |
 | `DocumentNumberAlreadyExistsException` | A user with this document number already exists | 409 |
 | `EmployeeAlreadyExistsException` | The employee is already registered for this restaurant | 409 |

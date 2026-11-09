@@ -5,7 +5,9 @@ import com.pragma.users.domain.exception.DomainException;
 import com.pragma.users.domain.exception.EmployeeLinkRegistrationException;
 import com.pragma.users.domain.exception.InvalidCredentialsException;
 import com.pragma.users.domain.exception.NotRestaurantOwnerException;
+import com.pragma.users.domain.exception.OwnerNotFoundException;
 import com.pragma.users.domain.exception.RestaurantNotFoundException;
+import com.pragma.users.domain.exception.RestaurantServiceUnavailableException;
 import com.pragma.users.infrastructure.exception.NoDataFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -53,10 +55,24 @@ public class ControllerAdvisor {
                 .body(Collections.singletonMap(MESSAGE, exception.getMessage()));
     }
 
+    @ExceptionHandler(OwnerNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleOwnerNotFoundException(
+            OwnerNotFoundException exception) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Collections.singletonMap(MESSAGE, exception.getMessage()));
+    }
+
     @ExceptionHandler(NotRestaurantOwnerException.class)
     public ResponseEntity<Map<String, String>> handleNotRestaurantOwnerException(
             NotRestaurantOwnerException exception) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Collections.singletonMap(MESSAGE, exception.getMessage()));
+    }
+
+    @ExceptionHandler(RestaurantServiceUnavailableException.class)
+    public ResponseEntity<Map<String, String>> handleRestaurantServiceUnavailableException(
+            RestaurantServiceUnavailableException exception) {
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
                 .body(Collections.singletonMap(MESSAGE, exception.getMessage()));
     }
 

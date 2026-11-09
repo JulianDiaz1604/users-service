@@ -1,12 +1,15 @@
 package com.pragma.users.infrastructure.out.client;
 
 import com.pragma.users.domain.exception.EmployeeAlreadyExistsException;
+import com.pragma.users.domain.exception.OwnerNotFoundException;
 import com.pragma.users.domain.exception.RestaurantNotFoundException;
+import com.pragma.users.domain.exception.RestaurantServiceUnavailableException;
 import com.pragma.users.domain.spi.IEmployeeRestaurantLinkPort;
 import com.pragma.users.domain.spi.IRestaurantOwnershipPort;
 import com.pragma.users.infrastructure.out.client.dto.EmployeeLinkRequestDto;
 import com.pragma.users.infrastructure.out.client.dto.OwnershipResponseDto;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 import java.util.UUID;
 
@@ -33,19 +36,29 @@ public class FoodCourtRestClientAdapter implements IRestaurantOwnershipPort, IEm
     /**
      * Calls {@code GET /api/v1/restaurants/{restaurantId}/owner} and returns the ownerId.
      *
-     * @throws RestaurantNotFoundException if food-court responds with 404
+     * @throws RestaurantNotFoundException         if food-court responds with 404 (restaurant absent)
+     * @throws OwnerNotFoundException              if the restaurant exists but reports no ownerId
+     * @throws RestaurantServiceUnavailableException if food-court is unreachable or answers with an
+     *                                            unexpected status
      */
     @Override
     public UUID getOwnerId(UUID restaurantId) {
-        OwnershipResponseDto response = restClient.get()
-                .uri(OWNER_PATH, restaurantId)
-                .retrieve()
-                .onStatus(status -> status.value() == 404,
-                        (req, res) -> { throw new RestaurantNotFoundException(); })
-                .body(OwnershipResponseDto.class);
+        OwnershipResponseDto response;
+        try {
+            response = restClient.get()
+                    .uri(OWNER_PATH, restaurantId)
+                    .retrieve()
+                    .onStatus(status -> status.value() == 404,
+                            (req, res) -> { throw new RestaurantNotFoundException(); })
+                    .body(OwnershipResponseDto.class);
+        } catch (RestClientException exception) {
+            // Connection refused, timeout, or any non-404 error status from food-court.
+            // (RestaurantNotFoundException is not a RestClientException, so it propagates untouched.)
+            throw new RestaurantServiceUnavailableException();
+        }
 
-        if (response == null) {
-            throw new RestaurantNotFoundException();
+        if (response == null || response.ownerId() == null) {
+            throw new OwnerNotFoundException();
         }
         return response.ownerId();
     }

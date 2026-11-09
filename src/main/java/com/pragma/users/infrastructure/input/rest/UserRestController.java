@@ -48,8 +48,9 @@ public class UserRestController {
             @ApiResponse(responseCode = "400", description = "Invalid or missing employee data"),
             @ApiResponse(responseCode = "401", description = "Missing or invalid authentication"),
             @ApiResponse(responseCode = "403", description = "Caller is not the owner of the specified restaurant"),
-            @ApiResponse(responseCode = "404", description = "Restaurant not found"),
-            @ApiResponse(responseCode = "409", description = "Email or document number already registered")
+            @ApiResponse(responseCode = "404", description = "Restaurant not found or restaurant has no registered owner"),
+            @ApiResponse(responseCode = "409", description = "Email or document number already registered"),
+            @ApiResponse(responseCode = "502", description = "Restaurant service is unavailable")
     })
     @PostMapping("/employee")
     public ResponseEntity<UserResponseDto> createEmployee(
