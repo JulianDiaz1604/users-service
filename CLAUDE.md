@@ -146,16 +146,25 @@ Full acceptance criteria live in `docs/reto/` of the challenge materials.
 
 ## 10. Domain error handling & runbook (MANDATORY for every HU)
 
-- **Complete custom exceptions.** Every domain error has its own exception class under
-  `domain/exception`, extending `DomainException` — never a bare `DomainException` with an
-  ad-hoc string, never a raw `RuntimeException`. Families and their HTTP mapping:
-  - validation errors extend `DomainException` → **400**
-    (e.g. `RequiredFieldException`, `InvalidEmailFormatException`, `UnderAgeException`);
-  - conflicts extend `ConflictException` → **409**
-    (e.g. `EmailAlreadyExistsException`, `DocumentNumberAlreadyExistsException`);
-  - not-found → `NoDataFoundException` → **404**.
-  Each exception carries its own message from `DomainConstants`; `ControllerAdvisor` maps every
-  family to its status and returns `{ "message": ... }`.
+- **Complete custom exceptions — one per failure case, covering every path.** Every error (domain
+  rule, bad input, authorization, not-found, conflict, cross-service / integration failure, …) has
+  its own exception class under `domain/exception` with a dedicated message from `DomainConstants`;
+  `ControllerAdvisor` maps each to the HTTP status that genuinely fits the failure and returns
+  `{ "message": ... }`. **No failure path goes unhandled or collapses into a generic/ill-fitting
+  status** — prefer a NEW exception for a NEW failure mode over reusing one that doesn't fit.
+  **Any HTTP status a real case warrants is valid** — common mappings:
+  - validation / bad input → **400** (e.g. `RequiredFieldException`, `InvalidEmailFormatException`)
+  - authentication required → **401**
+  - forbidden / wrong role / not the owner → **403** (e.g. `NotRestaurantOwnerException`)
+  - not found → **404** (e.g. `RestaurantNotFoundException`, `OrderNotFoundException`)
+  - conflict / already exists → **409** (e.g. `EmailAlreadyExistsException`)
+  - upstream service unavailable or an unexpected response (e.g. the restaurant service is down/timing
+    out) → **502** (e.g. `RestaurantServiceUnavailableException`)
+  - and any other status a genuine failure case warrants (409 state conflicts, 422, 503, …).
+  Grouping exceptions under a shared base helps where it fits (`DomainException` → 400,
+  `ConflictException` → 409); a dedicated `@ExceptionHandler` per exception is equally valid.
+  The non-negotiable part is: a custom exception per case, a message in `DomainConstants`, and a
+  precise `ControllerAdvisor` mapping — never a bare `RuntimeException` with an ad-hoc string.
 - **Domain validator.** Each aggregate/HU centralizes its business rules in a domain validator
   (`domain/validation/<Aggregate>Validator`) that throws the custom exceptions. Use cases
   orchestrate and delegate validation to the validator — no inline validation in use cases.
