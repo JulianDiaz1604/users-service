@@ -97,26 +97,45 @@ business rules, invariants, and the custom-exception → message → HTTP-status
 
 ---
 
-## HU6 — Create employee
+## HU6 — Create employee (relocated to users-service, PR 3)
 
 - **Endpoint:** `POST /api/v1/users/employee`
-- **Use case:** `UserUseCase.createEmployee`
+- **Use case:** `UserUseCase.createEmployee(user, restaurantId, requesterOwnerId)`
 - **Validator:** `UserValidator.validateNewEmployee`
+- **New SPI ports:** `IRestaurantOwnershipPort`, `IEmployeeRestaurantLinkPort`
+- **Adapter:** `FoodCourtRestClientAdapter` (implements both ports over RestClient)
 
 ### Business rules / invariants
 - Only an authenticated **OWNER** may create employees (enforced at `SecurityConfig`:
   `POST /api/v1/users/employee` → `hasRole('OWNER')`).
-- Required fields: `name`, `lastName`, `documentNumber`, `phone`, `email`, `password`.
-  **`birthDate` is NOT required** for employees (no adult-age rule applies).
+- Request body requires: `name`, `lastName`, `documentNumber`, `phone`, `email`, `password`,
+  **`restaurantId`** (UUID). **`birthDate` is NOT required** (no adult-age rule applies).
 - `email` must match a valid email format.
 - `phone`: digits only, optional leading `+`, max 13 characters.
 - `documentNumber`: digits only.
 - `password` is stored **bcrypt-hashed** and never returned in responses.
-- The created user is always assigned the **EMPLOYEE** role (`UserRole.EMPLOYEE`, id 3),
-  server-side. The `idRol` mentioned in the acceptance criteria is not accepted from the client;
-  the role is forced, mirroring HU1 (owner) — a caller cannot elevate the created account.
+- The created user is always assigned the **EMPLOYEE** role (server-side, never from the caller).
 - `email` and `documentNumber` must be unique.
 - Note: `users.birth_date` is nullable to allow employees without a birth date.
+
+### Orchestration (design §Data Flow — PR 3)
+1. Validate employee fields (`UserValidator.validateNewEmployee`).
+2. `GET /api/v1/restaurants/{restaurantId}/owner` via food-court (fail fast — no side effects).
+   - 404 → `RestaurantNotFoundException` (HTTP 404).
+3. Compare returned `ownerId` to `requesterOwnerId` (JWT subject).
+   - Mismatch → `NotRestaurantOwnerException` (HTTP 403).
+4. Persist account (bcrypt + uniqueness checks → 409 on duplicate).
+5. `POST /api/v1/restaurants/{restaurantId}/employees` with `{"employeeId":"<uuid>"}` (food-court).
+   - 409 → `EmployeeAlreadyExistsException` (HTTP 409) — no compensation.
+   - Other failure → compensating delete of the just-created user → `EmployeeLinkRegistrationException` (HTTP 502).
+6. Return created employee (password excluded).
+
+### Authorization header forwarding
+The inbound owner JWT is propagated to food-court via `AuthorizationForwardingInterceptor`
+(registered on `foodCourtRestClient`). food-court re-validates ownership on the POST (defense-in-depth).
+
+### New configuration property
+`foodcourt.base-url` (default `http://localhost:8080`; override via `FOODCOURT_BASE_URL`).
 
 ### Exceptions
 | Exception | Message | HTTP |
@@ -125,10 +144,14 @@ business rules, invariants, and the custom-exception → message → HTTP-status
 | `InvalidEmailFormatException` | The email format is invalid | 400 |
 | `InvalidPhoneFormatException` | The phone must be numeric, may start with '+', and have at most 13 characters | 400 |
 | `InvalidDocumentNumberException` | The document number must contain digits only | 400 |
+| `RestaurantNotFoundException` | The restaurant does not exist | 404 |
+| `NotRestaurantOwnerException` | This action can only be performed by the owner of the restaurant | 403 |
 | `EmailAlreadyExistsException` | A user with this email already exists | 409 |
 | `DocumentNumberAlreadyExistsException` | A user with this document number already exists | 409 |
+| `EmployeeAlreadyExistsException` | The employee is already registered for this restaurant | 409 |
+| `EmployeeLinkRegistrationException` | Failed to register the employee-restaurant link; account was rolled back | 502 |
 | (unauthenticated request) | Authentication is required | 401 |
-| (authenticated non-owner) | — | 403 |
+| (authenticated non-owner role) | — | 403 (Spring Security) |
 
 ---
 

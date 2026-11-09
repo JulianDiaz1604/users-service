@@ -15,4 +15,12 @@ public interface IUserPersistencePort {
     User getUserById(UUID id);
 
     Optional<User> findByEmail(String email);
+
+    /**
+     * Deletes the user with the given id. Used for compensating transactions when
+     * downstream link registration fails after the account has been persisted.
+     *
+     * @param id the UUID of the user to delete
+     */
+    void deleteUser(UUID id);
 }

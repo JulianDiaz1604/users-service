@@ -41,32 +41,32 @@ Chain strategy: pending
 
 ## Slice 2: food-court Ownership GET + Link-Only POST [PR 2]
 
-- [ ] 2.1 [fc] RED — `RestaurantUseCaseTest.findOwnerId`: returns ownerId for existing; throws `RestaurantNotFoundException` for missing (ROV-S01, ROV-S02, ROV-S05).
-- [ ] 2.2 [fc] GREEN — Add `findOwnerId(UUID restaurantId)` to `IRestaurantServicePort` api and `RestaurantUseCase`; add `OwnerIdResponseDto`.
-- [ ] 2.3 [fc] RED — `RestaurantRestControllerTest`: 200+ownerId, 404, 401 for `GET /api/v1/restaurants/{restaurantId}/owner` (ROV-S01–S06).
-- [ ] 2.4 [fc] GREEN — Add `GET /api/v1/restaurants/{restaurantId}/owner` to `/Users/juliandiaz/Projects/PRAGMA/Reto1/food-court-service/src/main/java/com/pragma/foodcourt/infrastructure/input/rest/RestaurantRestController.java`.
-- [ ] 2.5 [fc] RED — `EmployeeUseCaseTest.registerEmployee`: link success, 409 on duplicate, defense-in-depth ownership re-check (EAC-S01, EAC-S08).
-- [ ] 2.6 [fc] GREEN — Refactor `/Users/juliandiaz/Projects/PRAGMA/Reto1/food-court-service/src/main/java/com/pragma/foodcourt/domain/usecase/EmployeeUseCase.java`: POST body `{"employeeId"}` link-only; remove `IUserCreationPort` call.
-- [ ] 2.7 [fc] RED — `RestaurantValidatorTest`: ownerId-present null/blank → `RequiredFieldException`.
-- [ ] 2.8 [fc] GREEN — Add ownerId-present check to `/Users/juliandiaz/Projects/PRAGMA/Reto1/food-court-service/src/main/java/com/pragma/foodcourt/domain/validation/RestaurantValidator.java`.
-- [ ] 2.9 [fc] Update food-court OpenAPI docs for new `GET /{restaurantId}/owner` and changed `POST /{restaurantId}/employees` (REQ-ROV-06).
-- [ ] 2.10 [fc] Update `/Users/juliandiaz/Projects/PRAGMA/Reto1/food-court-service/docs/DOMAIN-RUNBOOK.md` with new endpoint + exceptions.
+- [x] 2.1 [fc] RED — `RestaurantUseCaseTest.findOwnerId`: returns ownerId for existing; throws `RestaurantNotFoundException` for missing (ROV-S01, ROV-S02, ROV-S05).
+- [x] 2.2 [fc] GREEN — Add `findOwnerId(UUID restaurantId)` to `IRestaurantServicePort` api and `RestaurantUseCase`; add `OwnerIdResponseDto`.
+- [x] 2.3 [fc] RED — `RestaurantRestControllerTest`: 200+ownerId, 404, 401 for `GET /api/v1/restaurants/{restaurantId}/owner` (ROV-S01–S06).
+- [x] 2.4 [fc] GREEN — Add `GET /api/v1/restaurants/{restaurantId}/owner` to `/Users/juliandiaz/Projects/PRAGMA/Reto1/food-court-service/src/main/java/com/pragma/foodcourt/infrastructure/input/rest/RestaurantRestController.java`.
+- [x] 2.5 [fc] RED — `EmployeeUseCaseTest.registerEmployee`: link success, 409 on duplicate, defense-in-depth ownership re-check (EAC-S01, EAC-S08).
+- [x] 2.6 [fc] GREEN — Refactor `/Users/juliandiaz/Projects/PRAGMA/Reto1/food-court-service/src/main/java/com/pragma/foodcourt/domain/usecase/EmployeeUseCase.java`: POST body `{"employeeId"}` link-only; remove `IUserCreationPort` call.
+- [x] 2.7 [fc] RED — `RestaurantValidatorTest`: ownerId-present null/blank → `RequiredFieldException`.
+- [x] 2.8 [fc] GREEN — Add ownerId-present check to `/Users/juliandiaz/Projects/PRAGMA/Reto1/food-court-service/src/main/java/com/pragma/foodcourt/domain/validation/RestaurantValidator.java`.
+- [x] 2.9 [fc] Update food-court OpenAPI docs for new `GET /{restaurantId}/owner` and changed `POST /{restaurantId}/employees` (REQ-ROV-06).
+- [x] 2.10 [fc] Update `/Users/juliandiaz/Projects/PRAGMA/Reto1/food-court-service/docs/DOMAIN-RUNBOOK.md` with new endpoint + exceptions.
 
 ## Slice 3: users-service Employee Creation Relocation [PR 3]
 
-- [ ] 3.1 [users] Create `src/main/java/com/pragma/users/domain/spi/IRestaurantOwnershipPort.java` (`getOwnerId`) and `IEmployeeRestaurantLinkPort.java` (`registerEmployee`).
-- [ ] 3.2 [users] Create `src/main/java/com/pragma/users/domain/exception/RestaurantNotFoundException.java` (404), `NotRestaurantOwnerException.java` (403), `EmployeeLinkRegistrationException.java` (502).
-- [ ] 3.3 [users] Add `restaurantId UUID` to `src/main/java/com/pragma/users/application/dto/request/CreateEmployeeRequestDto.java`.
-- [ ] 3.4 [users] RED — `UserUseCaseTest.createEmployee`: success (EAC-S01), 404 missing restaurant (EAC-S06), 403 not owner (EAC-S07), link-fail → compensating delete + 502 (design §flow step 5).
-- [ ] 3.5 [users] GREEN — Implement `UserUseCase.createEmployee(user, restaurantId, ownerId)` orchestration + compensating delete on link registration failure.
-- [ ] 3.6 [users] Modify `src/main/java/com/pragma/users/infrastructure/input/rest/UserRestController.java` + `application/handler/impl/UserHandler.java`: use `@AuthenticationPrincipal AuthenticatedUser`, pass `restaurantId` to use case.
-- [ ] 3.7 [users] RED — `FoodCourtRestClientAdapterTest`: GET 404→`RestaurantNotFoundException`, POST 409→`EmployeeAlreadyExistsException`, `Authorization` header forwarded (EAC-S06, EAC-S07, EAC-S08).
-- [ ] 3.8 [users] GREEN — Create `src/main/java/com/pragma/users/infrastructure/out/client/FoodCourtRestClientAdapter.java` implementing both SPI ports (MockRestServiceServer).
-- [ ] 3.9 [users] Create `src/main/java/com/pragma/users/infrastructure/out/client/AuthorizationForwardingInterceptor.java` to propagate owner JWT to food-court.
-- [ ] 3.10 [users] Modify `src/main/java/com/pragma/users/infrastructure/configuration/BeanConfiguration.java`: wire `foodCourtRestClient` (base-url from props), interceptor, `FoodCourtRestClientAdapter`, `IRestaurantOwnershipPort`, `IEmployeeRestaurantLinkPort`.
-- [ ] 3.11 [users] Update users-service OpenAPI docs for `POST /api/v1/users/employee` (REQ-EAC-11, all error codes 400/401/403/404/409).
-- [ ] 3.12 [users] Update `docs/DOMAIN-RUNBOOK.md` with new exceptions table (EAC exception table rows).
-- [ ] 3.13 [users] Add/verify `src/test/resources/application-test.yml` H2 test profile so `contextLoads()` passes in CI.
+- [x] 3.1 [users] Create `src/main/java/com/pragma/users/domain/spi/IRestaurantOwnershipPort.java` (`getOwnerId`) and `IEmployeeRestaurantLinkPort.java` (`registerEmployee`).
+- [x] 3.2 [users] Create `src/main/java/com/pragma/users/domain/exception/RestaurantNotFoundException.java` (404), `NotRestaurantOwnerException.java` (403), `EmployeeLinkRegistrationException.java` (502).
+- [x] 3.3 [users] Add `restaurantId UUID` to `src/main/java/com/pragma/users/application/dto/request/CreateEmployeeRequestDto.java`.
+- [x] 3.4 [users] RED — `UserUseCaseTest.createEmployee`: success (EAC-S01), 404 missing restaurant (EAC-S06), 403 not owner (EAC-S07), link-fail → compensating delete + 502 (design §flow step 5).
+- [x] 3.5 [users] GREEN — Implement `UserUseCase.createEmployee(user, restaurantId, ownerId)` orchestration + compensating delete on link registration failure.
+- [x] 3.6 [users] Modify `src/main/java/com/pragma/users/infrastructure/input/rest/UserRestController.java` + `application/handler/impl/UserHandler.java`: use `@AuthenticationPrincipal AuthenticatedUser`, pass `restaurantId` to use case.
+- [x] 3.7 [users] RED — `FoodCourtRestClientAdapterTest`: GET 404→`RestaurantNotFoundException`, POST 409→`EmployeeAlreadyExistsException`, `Authorization` header forwarded (EAC-S06, EAC-S07, EAC-S08).
+- [x] 3.8 [users] GREEN — Create `src/main/java/com/pragma/users/infrastructure/out/client/FoodCourtRestClientAdapter.java` implementing both SPI ports (MockRestServiceServer).
+- [x] 3.9 [users] Create `src/main/java/com/pragma/users/infrastructure/out/client/AuthorizationForwardingInterceptor.java` to propagate owner JWT to food-court.
+- [x] 3.10 [users] Modify `src/main/java/com/pragma/users/infrastructure/configuration/BeanConfiguration.java`: wire `foodCourtRestClient` (base-url from props), interceptor, `FoodCourtRestClientAdapter`, `IRestaurantOwnershipPort`, `IEmployeeRestaurantLinkPort`.
+- [x] 3.11 [users] Update users-service OpenAPI docs for `POST /api/v1/users/employee` (REQ-EAC-11, all error codes 400/401/403/404/409).
+- [x] 3.12 [users] Update `docs/DOMAIN-RUNBOOK.md` with new exceptions table (EAC exception table rows).
+- [x] 3.13 [users] Add/verify `src/test/resources/application-test.yml` H2 test profile so `contextLoads()` passes in CI.
 
 ## Slice 4: food-court Reverse Adapter Removals + Done Criteria [PR 4]
 

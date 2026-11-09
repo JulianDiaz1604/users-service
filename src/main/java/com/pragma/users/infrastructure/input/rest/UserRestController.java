@@ -5,6 +5,7 @@ import com.pragma.users.application.dto.request.CreateEmployeeRequestDto;
 import com.pragma.users.application.dto.request.CreateOwnerRequestDto;
 import com.pragma.users.application.dto.response.UserResponseDto;
 import com.pragma.users.application.handler.IUserHandler;
+import com.pragma.users.infrastructure.configuration.security.AuthenticatedUser;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -12,6 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -43,14 +45,19 @@ public class UserRestController {
     @Operation(summary = "Create an employee account (owner only)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Employee account created"),
-            @ApiResponse(responseCode = "400", description = "Invalid employee data"),
+            @ApiResponse(responseCode = "400", description = "Invalid or missing employee data"),
             @ApiResponse(responseCode = "401", description = "Missing or invalid authentication"),
-            @ApiResponse(responseCode = "403", description = "Caller is not an owner"),
+            @ApiResponse(responseCode = "403", description = "Caller is not the owner of the specified restaurant"),
+            @ApiResponse(responseCode = "404", description = "Restaurant not found"),
             @ApiResponse(responseCode = "409", description = "Email or document number already registered")
     })
     @PostMapping("/employee")
-    public ResponseEntity<UserResponseDto> createEmployee(@RequestBody CreateEmployeeRequestDto request) {
-        return new ResponseEntity<>(userHandler.createEmployee(request), HttpStatus.CREATED);
+    public ResponseEntity<UserResponseDto> createEmployee(
+            @RequestBody CreateEmployeeRequestDto request,
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser) {
+        return new ResponseEntity<>(
+                userHandler.createEmployee(request, authenticatedUser.userId()),
+                HttpStatus.CREATED);
     }
 
     @Operation(summary = "Create a client account (public self-registration)")

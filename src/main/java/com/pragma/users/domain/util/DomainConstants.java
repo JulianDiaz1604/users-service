@@ -22,4 +22,13 @@ public final class DomainConstants {
     public static final String DOCUMENT_ALREADY_EXISTS_MESSAGE =
             "A user with this document number already exists";
     public static final String INVALID_CREDENTIALS_MESSAGE = "Invalid email or password";
+
+    // HU6 relocation — restaurant ownership + link registration
+    public static final String RESTAURANT_NOT_FOUND_MESSAGE = "The restaurant does not exist";
+    public static final String NOT_RESTAURANT_OWNER_MESSAGE =
+            "This action can only be performed by the owner of the restaurant";
+    public static final String EMPLOYEE_ALREADY_EXISTS_MESSAGE =
+            "The employee is already registered for this restaurant";
+    public static final String EMPLOYEE_LINK_REGISTRATION_FAILED_MESSAGE =
+            "Failed to register the employee-restaurant link; account was rolled back";
 }

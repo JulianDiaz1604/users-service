@@ -22,3 +22,8 @@ jwt:
 
 appDescription: "users-service - Plazoleta de comidas (PRAGMA)"
 appVersion: "1.0.0"
+
+# Base URL of food-court-service for restaurant ownership and employee-link calls.
+# Override in every environment via FOODCOURT_BASE_URL.
+foodcourt:
+  base-url: ${FOODCOURT_BASE_URL:http://localhost:8080}

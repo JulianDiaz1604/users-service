@@ -9,3 +9,7 @@ spring:
       ddl-auto: create-drop
     database-platform: org.hibernate.dialect.H2Dialect
     show-sql: false
+
+# Stub value so foodCourtRestClient bean can be constructed without a live food-court service.
+foodcourt:
+  base-url: http://localhost:9999
