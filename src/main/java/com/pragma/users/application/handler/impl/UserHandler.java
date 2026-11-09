@@ -31,8 +31,9 @@ public class UserHandler implements IUserHandler {
     }
 
     @Override
-    public UserResponseDto createEmployee(CreateEmployeeRequestDto request) {
-        User createdEmployee = userServicePort.createEmployee(userRequestMapper.toUser(request));
+    public UserResponseDto createEmployee(CreateEmployeeRequestDto request, UUID requesterOwnerId) {
+        User employee = userRequestMapper.toUser(request);
+        User createdEmployee = userServicePort.createEmployee(employee, request.getRestaurantId(), requesterOwnerId);
         return userResponseMapper.toResponse(createdEmployee);
     }
 
