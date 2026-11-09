@@ -13,7 +13,7 @@ A food-court ordering backend split into **four independent microservices** (one
 | `users-service` | Users, roles, authentication (JWT) | PostgreSQL |
 | `food-court-service` | Restaurants, dishes, orders | PostgreSQL |
 | `messaging-service` | SMS notifications + security PIN (AWS SNS) | PostgreSQL |
-| `traceability-service` | Order status history & efficiency metrics | MongoDB |
+| `traceability-service` | Order status history & efficiency metrics | DynamoDB |
 
 Order lifecycle: `PENDING → IN_PREPARATION → READY → DELIVERED`, plus `PENDING → CANCELLED`.
 A client may have only **one active order** at a time.
@@ -30,18 +30,20 @@ Three layers, dependencies point **inward only**: `infrastructure → applicatio
   (`@Service`), `mapper` (MapStruct). May depend on **domain only**.
 - **infrastructure** — technical adapters. `configuration` (`BeanConfiguration` wires use cases
   and adapters as `@Bean`), `documentation` (OpenAPI), `exceptionhandler` (`ControllerAdvisor`),
-  `input/rest` (controllers), `out/jpa` | `out/mongo` (adapters, entities, mappers, repositories).
+  `input/rest` (controllers), `out/jpa` | `out/dynamo` (adapters, entities, mappers, repositories).
 
 Hard rules:
 - **domain depends on nothing.** No `org.springframework.*`, no `jakarta.persistence.*` in domain.
 - **application must NOT import any `infrastructure` class.**
 - Cross-layer wiring is manual in `BeanConfiguration`; only `*Handler` carries `@Service`.
+- **Cross-service checks** (e.g. validating an owner's role) live in the **use case behind an SPI
+  port**, never in a pure validator (validators stay port-free and pure).
 - Swap a datastore or transport without touching domain/application.
 
 ## 3. Tech stack (current, stable)
 
 - **Java 21** (LTS, toolchain-pinned) · **Spring Boot 3.5.x** · **Gradle 8.10.x** (wrapper)
-- **PostgreSQL** (relational) / **MongoDB** (traceability)
+- **PostgreSQL** (relational) / **DynamoDB** (traceability)
 - **MapStruct 1.6.x** (mappers) · **Lombok** (Boot-managed) · **springdoc-openapi 2.x** (Swagger UI)
 - **JUnit 5 + Mockito** (tests) · **JaCoCo** (coverage) · **spring-security-crypto** (bcrypt)
 - Spring Boot 3 uses the **`jakarta.*`** namespace (never `javax.*`).
@@ -74,11 +76,15 @@ Hard rules:
   `when(...).thenReturn(...)`, fixtures in `@BeforeEach`.
 - **FIRST**: Fast, Independent, Repeatable, Self-validating, Timely. No external deps in unit tests.
 - Unit-test the domain validators and use cases; name tests after the behavior under test.
+- **Test method names in camelCase BDD style (never snake_case)** to satisfy Sonar rule **S100**.
 
 ## 6. Git workflow
 
 - Integration branch: **`main`**. One branch per user story: `feature/hu-01/create-owner`,
   `feature/hu-02/create-restaurant`, … Bugfixes from a tag: `fix/bug-01/<kebab>`.
+- **One HU at a time, with isolated scope. Never mix HUs in one branch.**
+- **Before cutting a new HU branch:** update your local `main` from the already-merged previous-HU
+  PR, and only then branch.
 - Merge each HU branch into `main` when complete; **tag milestones** with annotated semver tags
   (`git tag -a v1.0.0 -m "..."`), then push tags explicitly.
 - **Conventional Commits in English**: `feat:`, `fix:`, `test:`, `chore:`, `docs:`, `refactor:`.
@@ -104,6 +110,9 @@ Hard rules:
 - **SonarLint must pass clean before any PR.** No open SonarLint findings (bugs, vulnerabilities,
   code smells, security hotspots) may remain when a PR is raised — fix them, or suppress with a
   documented justification, first. This is a pre-PR gate alongside the HU completion checklist.
+  (SonarLint runs only in the IDE — it cannot be run from the terminal.)
+- **ArchUnit + pre-commit hooks are active in all four services** to enforce the hexagonal
+  boundaries automatically on every change.
 - Keep the hexagonal boundaries clean on every change. When in doubt, the domain stays pure.
 
 ## 8. Run locally
@@ -112,8 +121,15 @@ Hard rules:
 ./gradlew clean build        # compile + run tests + jacoco report
 ./gradlew bootRun            # start the service
 ```
-Requires JDK 21 and a running PostgreSQL (or MongoDB for traceability). DB connection is
+Requires JDK 21 and a running PostgreSQL (DynamoDB for `traceability-service`). DB connection is
 overridable via `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD` env vars (see `application.yml`).
+
+- **JWT secret:** `JWT_SECRET` must be **shared and identical across all services** — `users-service`
+  signs the token, every other service only verifies it. jjwt selects the HMAC variant from the
+  secret's length: the current shared secret resolves to **HS384** (not HS256). To standardise on
+  HS256, pin the algorithm explicitly and provide an exact 32-byte secret.
+- **CI test profile:** every PostgreSQL service ships an **H2** in-memory test profile so
+  `contextLoads()` passes in CI without a live database.
 
 ## 9. User-story backlog (shared reference)
 
