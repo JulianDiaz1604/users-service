@@ -6,8 +6,8 @@ spring:
     name: users-service
   datasource:
     url: jdbc:postgresql://localhost:5432/${DB_NAME:users}
-    username: ${DB_USERNAME:plazoleta}
-    password: ${DB_PASSWORD:plazoleta}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:1234}
   jpa:
     hibernate:
       ddl-auto: update
@@ -26,4 +26,4 @@ appVersion: "1.0.0"
 # Base URL of food-court-service for restaurant ownership and employee-link calls.
 # Override in every environment via FOODCOURT_BASE_URL.
 foodcourt:
-  base-url: ${FOODCOURT_BASE_URL:http://localhost:8080}
+  base-url: ${FOODCOURT_BASE_URL:http://localhost:8082}
