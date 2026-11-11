@@ -46,7 +46,9 @@ public class SecurityConfig {
                         exception.authenticationEntryPoint(new JwtAuthenticationEntryPoint()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/users/**").permitAll()
+                        // Reading a user (e.g. food-court fetching the client's contact for the SMS)
+                        // now requires a valid token; callers forward the shared JWT.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/users/**").authenticated()
                         .requestMatchers(HttpMethod.POST, CLIENT_ENDPOINT).permitAll()
                         .requestMatchers(HttpMethod.POST, OWNER_ENDPOINT).hasRole(ADMINISTRATOR_ROLE)
                         .requestMatchers(HttpMethod.POST, EMPLOYEE_ENDPOINT).hasRole(OWNER_ROLE)
